@@ -5,6 +5,7 @@
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
+const fs = require('fs');
 
 // Use these files as static files (meaning send these to the user as-is to their browser)
 app.use(express.static(__dirname + '/public'));
@@ -23,9 +24,12 @@ app.get('/ping', (req, res) => {
   res.json('pong');
 });
 
+//const myFile = require('/public/data/data.json');
+
 app.get('/data', (req, res) => {
   console.log("GET data");
-  res.sendFile(__dirname + '/public/data/data.json');
+  var data = fs.readFileSync(__dirname + '/public/data/data.json', 'utf8');
+  res.json(JSON.parse(data));
 });
 
 // listen at specified port
