@@ -6,9 +6,12 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 const fs = require('fs');
+var path = require('path')
+
 
 // Use these files as static files (meaning send these to the user as-is to their browser)
-app.use(express.static(__dirname + '/public'));
+//app.use(express.static(__dirname + '/public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // when the user makes a get request to '/' (meaning http://{website}/ -- but in our case, http://localhost:3000/)
 // send them the file `FILENAME`
