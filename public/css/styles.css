@@ -8,10 +8,10 @@ h1 {
 
 .pixelart-to-css {
     position: absolute;
-    animation: x 1s infinite;
-    -webkit-animation: x 1s infinite;
-    -moz-animation: x 1s infinite;
-    -o-animation: x 1s infinite;
+    animation: x 2s infinite;
+    -webkit-animation: x 2s infinite;
+    -moz-animation: x 2s infinite;
+    -o-animation: x 2s infinite;
 }
 /*
 @keyframes x {

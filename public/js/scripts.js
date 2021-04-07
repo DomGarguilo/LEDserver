@@ -2,7 +2,7 @@ console.log('in scripts');
 
 displayImagePreview();
 
-//inserts css into stylesheet
+// inserts css into stylesheet
 function addCss(cssCode) {
     var styleElement = document.createElement("style");
     if (styleElement.styleSheet) {
@@ -13,7 +13,7 @@ function addCss(cssCode) {
     document.getElementsByTagName("head")[0].appendChild(styleElement);
 }
 
-//fetches the image data json from server
+// fetches the image data json from server
 async function getJsonData() {
     var response = await fetch(document.URL + 'data');
     //var response = await fetch('https://led-matrix-server.herokuapp.com/')
@@ -25,6 +25,7 @@ function generateFrame(pixelSize, frameRange, data) {
     var result = frameRange + ' {box-shadow:';
     for (var i = 1; i <= 16; i++) {
         for (var j = 1; j <= 16; j++) {
+
             result += (pixelSize * i).toString() + 'px ' + (pixelSize * j).toString() + 'px 0 0 #' + data[i - 1][j - 1];
             if (j == 16 && i == 16) {
                 result += ';';
@@ -37,29 +38,73 @@ function generateFrame(pixelSize, frameRange, data) {
     result = result.replaceAll('0x', '');
     return result;
 }
-//wraps the color array with additional CSS for displaying the frame
-function generateFrameSet(pixelSize, frameRange, data) {
-    var result = '@keyframes x {' + generateFrame(pixelSize, frameRange, data) + '}';
+// wraps the color array with additional CSS for displaying the frame
+function generateFrameSet(pixelSize, rangeList, frameList) {
+    console.log('HERE');
+    var result = '@keyframes x {';
+    var i;
+    for (i = 0; i < frameList.length; i++) {
+        result = result + generateFrame(pixelSize, rangeList[i], get2Darray(frameList[i]));
+    }
+    result = result + '}'
     return result;
 }
 
 function displayImagePreview() {
     getJsonData().then((v) => {
-        var arr = get2Darray(v.animationList[0].frames[0]);
-        var cssArray = generateFrameSet(40, '0%, 100%', arr);
+        var frameCount = v.animationList[0].frames.length;
+        var ranges = getRange(frameCount);
+        var cssArray = generateFrameSet(40, ranges, v.animationList[0].frames);
         addCss(cssArray);
     });
 
 }
 
+// converts a 1D array to a 2D array
 function get2Darray(arr) {
     var result = Array.from(Array(16), () => new Array(16));
     var i;
     for (i = 0; i < 16; i++) {
         var j;
+        var tempArr = new Array(16);
         for (j = 0; j < 16; j++) {
             result[i][j] = arr[(j * 16) + i];
         }
     }
+    return reverseEveryOther(result);
+}
+
+// takes a number and returns a range of percents
+// e.g. getRange(3) = {"0%, 33.3%","33.4%, 66.6%", "66.7%, 100%"}
+function getRange(num) {
+    var result = new Array(num);
+    let increment = Number(100 / num);
+    for (var i = 0; i < result.length; i++) {
+        let start, end;
+        if (i == 0) {
+            start = 0.0;
+            end = Number(increment);
+        } else {
+            start = ((i * increment) + 0.1);
+            end = ((i * increment) + increment);
+        }
+        result[i] = start.toFixed(1) + '%, ' + end.toFixed(1) + '%';
+    }
     return result;
+}
+
+// reverses every other row since in the raw array, every other is reversed since thats how the physical matrix needs it
+function reverseEveryOther(matrix) {
+    var col;
+    for (col = 0; col < matrix[0].length; col++) {
+        if (col % 2 == 1) {
+            var row;
+            for (row = 0; row < matrix.length / 2; row++) {
+                var temp = matrix[row][col];
+                matrix[row][col] = matrix[matrix.length - row - 1][col];
+                matrix[matrix.length - row - 1][col] = temp;
+            }
+        }
+    }
+    return matrix;
 }
