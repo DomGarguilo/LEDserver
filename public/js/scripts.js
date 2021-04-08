@@ -39,9 +39,10 @@ function generateFrame(pixelSize, frameRange, data) {
     return result;
 }
 // wraps the color array with additional CSS for displaying the frame
-function generateFrameSet(pixelSize, rangeList, frameList) {
+function generateFrameSet(pixelSize, rangeList, data) {
     console.log('HERE');
-    var result = '@keyframes x {';
+    var result = '@keyframes ' + data.name + ' {';
+    var frameList = data.frames;
     var i;
     for (i = 0; i < frameList.length; i++) {
         result = result + generateFrame(pixelSize, rangeList[i], get2Darray(frameList[i]));
@@ -52,12 +53,34 @@ function generateFrameSet(pixelSize, rangeList, frameList) {
 
 function displayImagePreview() {
     getJsonData().then((v) => {
-        var frameCount = v.animationList[0].frames.length;
-        var ranges = getRange(frameCount);
-        var cssArray = generateFrameSet(40, ranges, v.animationList[0].frames);
-        addCss(cssArray);
+        var animationCount = v.animationList.length;
+        for (i = 0; i < animationCount; i++) {
+            var ranges = getRange(v.animationList[i].frames.length);
+            var data = v.animationList[i];
+            var cssArray = generateFrameSet(10, ranges, data);
+            var cssDetails = generateCssDetails(data.name, 2);
+            var html = generateHtmlTag(data.name);
+            console.log(html);
+            console.log(data.name);
+            addHtml(html, 'imageQueue');
+            addCss(cssArray);
+            addCss(cssDetails);
+        }
     });
 
+}
+
+// inserts html after specified div tag
+function addHtml(html, insertTag) {
+    console.log(insertTag);
+    console.log(html);
+    document.getElementById(insertTag).innerHTML += html;
+}
+
+// returns div tag for animation
+function generateHtmlTag(name) {
+    var result = `<div class="` + name + `"></div>`;
+    return result;
 }
 
 // converts a 1D array to a 2D array
@@ -107,4 +130,18 @@ function reverseEveryOther(matrix) {
         }
     }
     return matrix;
+}
+
+// returns the css animation details
+function generateCssDetails(name, seconds) {
+    var result = '.' + name + ` {
+        display: block;
+        margin-bottom: 200px;
+        animation: `+ name + `2s infinite;
+        -webkit-animation: `+ name + ` 2s infinite;
+        -moz-animation: `+ name + ` 2s infinite;
+        -o-animation: `+ name + ` 2s infinite;
+    }`
+    console.log(result);
+    return result;
 }
