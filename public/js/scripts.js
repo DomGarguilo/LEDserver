@@ -20,6 +20,7 @@ async function getJsonData() {
     jsonData = await response.json();
     return jsonData;
 }
+
 // generates the css color array for a single frame of animation
 function generateFrame(pixelSize, frameRange, data) {
     var result = frameRange + ' {box-shadow:';
@@ -38,6 +39,7 @@ function generateFrame(pixelSize, frameRange, data) {
     result = result.replaceAll('0x', '');
     return result;
 }
+
 // wraps the color array with additional CSS for displaying the frame
 function generateFrameSet(pixelSize, rangeList, data) {
     console.log('HERE');
