@@ -1,13 +1,10 @@
-// I'm just going to write out a few of these so you understand how express works.
-// there is a ton of information about it online and its really easy to use.
-
-// Turning this js script into an express app
-//const { json } = require('express');
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 const fs = require('fs');
 var path = require('path')
+var bodyParser = require('body-parser');
+app.use(bodyParser.json()); // support json encoded bodies
 
 
 // Use these files as static files (meaning send these to the user as-is to their browser)
@@ -41,6 +38,12 @@ app.get('/data', (req, res) => {
 // listen at specified port
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
+});
+
+
+app.post('/data', (req, res) => {
+  console.log('Got body:', req.body);
+  res.sendStatus(200);
 });
 
 //update jsonData variable from file

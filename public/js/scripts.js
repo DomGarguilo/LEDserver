@@ -70,6 +70,19 @@ function displayImagePreview() {
 
 }
 
+// makes a POST req to the server. Accepts json object
+function post(json) {
+    fetch("/data", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(json)
+    }).then(res => {
+        console.log("Request complete! response:", res);
+    });
+}
+
 // inserts html after specified div tag
 function addHtml(html, insertTag) {
     console.log(insertTag);
