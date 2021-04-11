@@ -1,10 +1,8 @@
-console.log('in scripts');
-
 displayImagePreview();
 
 // inserts css into stylesheet
 function addCss(cssCode) {
-    var styleElement = document.createElement("style");
+    let styleElement = document.createElement("style");
     if (styleElement.styleSheet) {
         styleElement.styleSheet.cssText = cssCode;
     } else {
@@ -15,7 +13,7 @@ function addCss(cssCode) {
 
 // fetches the image data json from server
 async function getJsonData() {
-    var response = await fetch(document.URL + 'data');
+    let response = await fetch(document.URL + 'data');
     //var response = await fetch('https://led-matrix-server.herokuapp.com/')
     jsonData = await response.json();
     return jsonData;
@@ -23,9 +21,9 @@ async function getJsonData() {
 
 // generates the css color array for a single frame of animation
 function generateFrame(pixelSize, frameRange, data) {
-    var result = frameRange + ' {box-shadow:';
-    for (var i = 1; i <= 16; i++) {
-        for (var j = 1; j <= 16; j++) {
+    let result = frameRange + ' {box-shadow:';
+    for (let i = 1; i <= 16; i++) {
+        for (let j = 1; j <= 16; j++) {
 
             result += (pixelSize * i).toString() + 'px ' + (pixelSize * j).toString() + 'px 0 0 #' + data[i - 1][j - 1];
             if (j == 16 && i == 16) {
@@ -42,11 +40,9 @@ function generateFrame(pixelSize, frameRange, data) {
 
 // wraps the color array with additional CSS for displaying the frame
 function generateFrameSet(pixelSize, rangeList, data) {
-    console.log('HERE');
-    var result = '@keyframes ' + data.name + ' {';
-    var frameList = data.frames;
-    var i;
-    for (i = 0; i < frameList.length; i++) {
+    let result = '@keyframes ' + data.name + ' {';
+    let frameList = data.frames;
+    for (let i = 0; i < frameList.length; i++) {
         result = result + generateFrame(pixelSize, rangeList[i], get2Darray(frameList[i]));
     }
     result = result + '}'
@@ -55,15 +51,13 @@ function generateFrameSet(pixelSize, rangeList, data) {
 
 function displayImagePreview() {
     getJsonData().then((v) => {
-        var animationCount = v.animationList.length;
-        for (i = 0; i < animationCount; i++) {
-            var ranges = getRange(v.animationList[i].frames.length);
-            var data = v.animationList[i];
-            var cssArray = generateFrameSet(10, ranges, data);
-            var cssDetails = generateCssDetails(data.name, 2);
-            var html = generateHtmlTag(data.name);
-            console.log(html);
-            console.log(data.name);
+        const animationCount = v.animationList.length;
+        for (let i = 0; i < animationCount; i++) {
+            let ranges = getRange(v.animationList[i].frames.length);
+            let data = v.animationList[i];
+            let cssArray = generateFrameSet(10, ranges, data);
+            let cssDetails = generateCssDetails(data.name, 2);
+            let html = generateHtmlTag(data.name);
             addHtml(html, 'imageQueue');
             addCss(cssArray);
             addCss(cssDetails);
@@ -87,25 +81,20 @@ function post(json) {
 
 // inserts html after specified div tag
 function addHtml(html, insertTag) {
-    console.log(insertTag);
-    console.log(html);
     document.getElementById(insertTag).innerHTML += html;
 }
 
 // returns div tag for animation
 function generateHtmlTag(name) {
-    var result = `<div class="` + name + `"></div>`;
+    let result = `<div class="` + name + `"></div>`;
     return result;
 }
 
 // converts a 1D array to a 2D array
 function get2Darray(arr) {
-    var result = Array.from(Array(16), () => new Array(16));
-    var i;
-    for (i = 0; i < 16; i++) {
-        var j;
-        var tempArr = new Array(16);
-        for (j = 0; j < 16; j++) {
+    let result = Array.from(Array(16), () => new Array(16));
+    for (let i = 0; i < 16; i++) {
+        for (let j = 0; j < 16; j++) {
             result[i][j] = arr[(j * 16) + i];
         }
     }
@@ -115,9 +104,9 @@ function get2Darray(arr) {
 // takes a number and returns a range of percents
 // e.g. getRange(3) = {"0%, 33.3%","33.4%, 66.6%", "66.7%, 100%"}
 function getRange(num) {
-    var result = new Array(num);
+    let result = new Array(num);
     let increment = Number(100 / num);
-    for (var i = 0; i < result.length; i++) {
+    for (let i = 0; i < result.length; i++) {
         let start, end;
         if (i == 0) {
             start = 0.0;
@@ -133,12 +122,10 @@ function getRange(num) {
 
 // reverses every other row since in the raw array, every other is reversed since thats how the physical matrix needs it
 function reverseEveryOther(matrix) {
-    var col;
-    for (col = 0; col < matrix[0].length; col++) {
+    for (let col = 0; col < matrix[0].length; col++) {
         if (col % 2 == 1) {
-            var row;
-            for (row = 0; row < matrix.length / 2; row++) {
-                var temp = matrix[row][col];
+            for (let row = 0; row < matrix.length / 2; row++) {
+                let temp = matrix[row][col];
                 matrix[row][col] = matrix[matrix.length - row - 1][col];
                 matrix[matrix.length - row - 1][col] = temp;
             }
@@ -149,7 +136,7 @@ function reverseEveryOther(matrix) {
 
 // returns the css animation details
 function generateCssDetails(name, seconds) {
-    var result = '.' + name + ` {
+    let result = '.' + name + ` {
         display: block;
         margin-bottom: 200px;
         animation: `+ name + `2s infinite;
@@ -157,6 +144,28 @@ function generateCssDetails(name, seconds) {
         -moz-animation: `+ name + ` 2s infinite;
         -o-animation: `+ name + ` 2s infinite;
     }`
-    console.log(result);
     return result;
+}
+
+// function to pull the form data and send it to the server
+function submitJson() {
+    console.log("here:");
+    let formEl = document.forms.submitForm;
+    var formData = new FormData(formEl);
+    var name = formData.get('name');
+    console.log(name);
+}
+
+function run_this_function() {
+    // your code goes here
+    console.log("mmm");
+    return 'running';
+}
+
+function myFunction() {
+    let formEl = document.forms.myform;
+    var formData = new FormData(formEl);
+    var name = formData.get('fullname');
+    post(JSON.parse(name));
+    console.log('HERE');
 }
