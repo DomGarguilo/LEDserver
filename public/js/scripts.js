@@ -1,5 +1,7 @@
-displayImagePreview();
 
+
+//const Jimp = require('jimp');
+displayImagePreview();
 // inserts css into stylesheet
 function addCss(cssCode) {
     let styleElement = document.createElement("style");
@@ -50,6 +52,7 @@ function generateFrameSet(pixelSize, rangeList, data) {
 }
 
 function displayImagePreview() {
+    //convertImage();
     getJsonData().then((v) => {
         const animationCount = v.animationList.length;
         for (let i = 0; i < animationCount; i++) {
@@ -120,7 +123,8 @@ function getRange(num) {
     return result;
 }
 
-// reverses every other row since in the raw array, every other is reversed since thats how the physical matrix needs it
+// reverses every other row since in the raw array
+// every other is reversed since thats how the physical matrix needs it
 function reverseEveryOther(matrix) {
     for (let col = 0; col < matrix[0].length; col++) {
         if (col % 2 == 1) {
@@ -147,25 +151,70 @@ function generateCssDetails(name, seconds) {
     return result;
 }
 
-// function to pull the form data and send it to the server
-function submitJson() {
-    console.log("here:");
-    let formEl = document.forms.submitForm;
-    var formData = new FormData(formEl);
-    var name = formData.get('name');
-    console.log(name);
+// accepts a json from form and uploads it to the server
+// deprecated and replaced by image upload
+function jsonFormToServer() {
+    try {
+        let formEl = document.forms.myform;
+        var formData = new FormData(formEl);
+        var name = formData.get('fullname');
+        if (name === undefined) {
+            console.log('Empty form');
+        } else {
+            post(JSON.parse(name));
+        }
+    } catch (e) {
+        console.log('Error sending json' + e);
+    }
+
+
 }
 
-function run_this_function() {
-    // your code goes here
-    console.log("mmm");
-    return 'running';
+function convertImage(reader) {
+    //create image
+    var img = new Image();
+    img.src = reader.result;
+    //get canvas from html
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext('2d');
+    //scale image to fir canvas
+    var scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    var x = (canvas.width / 2) - (img.width / 2) * scale;
+    var y = (canvas.height / 2) - (img.height / 2) * scale;
+    //draw canvas to screen
+    context.drawImage(img, x, y, img.width * scale, img.height * scale);
 }
 
-function myFunction() {
-    let formEl = document.forms.myform;
-    var formData = new FormData(formEl);
-    var name = formData.get('fullname');
-    post(JSON.parse(name));
-    console.log('HERE');
+// displays preview of uploaded image
+function preview_image(event) {
+    var reader = new FileReader();
+    reader.onload = function () {
+        convertImage(reader);
+    }
+    reader.readAsDataURL(event.target.files[0]);
+}
+
+//process image
+// TODO change canvas to 16x16 and replace image preview with old method
+function uploadImage() {
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext('2d');
+    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+    console.log(data.length);
+    for (let i = 0; i < data.length; i += 4) {
+        const red = data[i];
+        const green = data[i + 1];
+        const blue = data[i + 2];
+        const alpha = data[i + 3];
+    }
+}
+
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
