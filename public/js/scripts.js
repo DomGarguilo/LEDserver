@@ -1,22 +1,24 @@
+main();
 
-
-//const Jimp = require('jimp');
-displayImagePreview();
 // inserts css into stylesheet
 function addCss(cssCode) {
+    // creates the HTMLStyleElement
     let styleElement = document.createElement("style");
+    // I think this checks if theres a stylesheet and creates one if not exists
     if (styleElement.styleSheet) {
         styleElement.styleSheet.cssText = cssCode;
-    } else {
+    } else { // if one exists append to it
         styleElement.appendChild(document.createTextNode(cssCode));
     }
+    // appends new HTMLStyleElement to the document
     document.getElementsByTagName("head")[0].appendChild(styleElement);
 }
 
 // fetches the image data json from server
+// comes in array of hex color vals so other functions convert it to css-acceptable code
 async function getJsonData() {
-    let response = await fetch(document.URL + 'data');
-    //var response = await fetch('https://led-matrix-server.herokuapp.com/')
+    let endpoint = document.URL + 'data';
+    let response = await fetch(endpoint);
     jsonData = await response.json();
     return jsonData;
 }
@@ -51,16 +53,23 @@ function generateFrameSet(pixelSize, rangeList, data) {
     return result;
 }
 
-function displayImagePreview() {
-    //convertImage();
+// main function to display the image previews on the page
+function main() {
+    // get image data from server
     getJsonData().then((v) => {
+        // loops through each animation in image data
         const animationCount = v.animationList.length;
         for (let i = 0; i < animationCount; i++) {
+            // get css header for each animation
             let ranges = getRange(v.animationList[i].frames.length);
             let data = v.animationList[i];
+            // get css formatted color array
             let cssArray = generateFrameSet(10, ranges, data);
+            // get css rules to cycle through frames in animation
             let cssDetails = generateCssDetails(data.name, 2);
+            // get html tag to refference the animation
             let html = generateHtmlTag(data.name);
+            // add the various parts to the page
             addHtml(html, 'imageQueue');
             addCss(cssArray);
             addCss(cssDetails);
@@ -69,7 +78,8 @@ function displayImagePreview() {
 
 }
 
-// makes a POST req to the server. Accepts json object
+// makes a POST req to the server
+// Accepts json object containing hex color array for a new image
 function post(json) {
     fetch("/data", {
         method: "POST",
@@ -87,13 +97,14 @@ function addHtml(html, insertTag) {
     document.getElementById(insertTag).innerHTML += html;
 }
 
-// returns div tag for animation
+// create and return div tag for animation based on its name
 function generateHtmlTag(name) {
     let result = `<div class="` + name + `"></div>`;
     return result;
 }
 
 // converts a 1D array to a 2D array
+// hardcoded 256 1D array -> 16x16 2D array
 function get2Darray(arr) {
     let result = Array.from(Array(16), () => new Array(16));
     for (let i = 0; i < 16; i++) {
@@ -101,6 +112,7 @@ function get2Darray(arr) {
             result[i][j] = arr[(j * 16) + i];
         }
     }
+    // reverse every other line in array (needed for image display)
     return reverseEveryOther(result);
 }
 
@@ -108,7 +120,7 @@ function get2Darray(arr) {
 // e.g. getRange(3) = {"0%, 33.3%","33.4%, 66.6%", "66.7%, 100%"}
 function getRange(num) {
     let result = new Array(num);
-    let increment = Number(100 / num);
+    let increment = Number(100 / num); 
     for (let i = 0; i < result.length; i++) {
         let start, end;
         if (i == 0) {
@@ -138,7 +150,8 @@ function reverseEveryOther(matrix) {
     return matrix;
 }
 
-// returns the css animation details
+// returns the css animation rules
+// tells it how big and how fast to display frames and such
 function generateCssDetails(name, seconds) {
     let result = '.' + name + ` {
         display: block;
@@ -151,7 +164,7 @@ function generateCssDetails(name, seconds) {
     return result;
 }
 
-// accepts a json from form and uploads it to the server
+// accepts a json from a form and uploads it to the server
 // deprecated and replaced by image upload
 function jsonFormToServer() {
     try {
@@ -177,7 +190,7 @@ function convertImage(reader) {
     //get canvas from html
     var canvas = document.getElementById("myCanvas");
     var context = canvas.getContext('2d');
-    //scale image to fir canvas
+    //scale image to fit canvas
     var scale = Math.min(canvas.width / img.width, canvas.height / img.height);
     var x = (canvas.width / 2) - (img.width / 2) * scale;
     var y = (canvas.height / 2) - (img.height / 2) * scale;
@@ -210,11 +223,13 @@ function uploadImage() {
     }
 }
 
+// converts an r, g or b value to its hex equivalent
 function componentToHex(c) {
     var hex = c.toString(16);
     return hex.length == 1 ? "0" + hex : hex;
 }
 
+// converts a set of r, g and b values to its hex equivalent
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
