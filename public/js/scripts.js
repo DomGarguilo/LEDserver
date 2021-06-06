@@ -1,5 +1,30 @@
 main();
 
+// main function to display the image previews on the page
+function main() {
+    // get image data from server
+    getJsonData().then((v) => {
+        // loops through each animation in image data
+        const animationCount = v.animationList.length;
+        for (let i = 0; i < animationCount; i++) {
+            // get css header for each animation
+            let ranges = getRange(v.animationList[i].frames.length);
+            let data = v.animationList[i];
+            // get css formatted color array
+            let cssArray = generateFrameSet(10, ranges, data);
+            // get css rules to cycle through frames in animation
+            let cssDetails = generateCssDetails(data.name, 2);
+            // get html tag to refference the animation
+            let html = generateHtmlTag(data.name);
+            // add the various parts to the page
+            addHtml(html, 'imageQueue');
+            addCss(cssArray);
+            addCss(cssDetails);
+        }
+    });
+
+}
+
 // inserts css into stylesheet
 function addCss(cssCode) {
     // creates the HTMLStyleElement
@@ -28,7 +53,6 @@ function generateFrame(pixelSize, frameRange, data) {
     let result = frameRange + ' {box-shadow:';
     for (let i = 1; i <= 16; i++) {
         for (let j = 1; j <= 16; j++) {
-
             result += (pixelSize * i).toString() + 'px ' + (pixelSize * j).toString() + 'px 0 0 #' + data[i - 1][j - 1];
             if (j == 16 && i == 16) {
                 result += ';';
@@ -53,30 +77,6 @@ function generateFrameSet(pixelSize, rangeList, data) {
     return result;
 }
 
-// main function to display the image previews on the page
-function main() {
-    // get image data from server
-    getJsonData().then((v) => {
-        // loops through each animation in image data
-        const animationCount = v.animationList.length;
-        for (let i = 0; i < animationCount; i++) {
-            // get css header for each animation
-            let ranges = getRange(v.animationList[i].frames.length);
-            let data = v.animationList[i];
-            // get css formatted color array
-            let cssArray = generateFrameSet(10, ranges, data);
-            // get css rules to cycle through frames in animation
-            let cssDetails = generateCssDetails(data.name, 2);
-            // get html tag to refference the animation
-            let html = generateHtmlTag(data.name);
-            // add the various parts to the page
-            addHtml(html, 'imageQueue');
-            addCss(cssArray);
-            addCss(cssDetails);
-        }
-    });
-
-}
 
 // makes a POST req to the server
 // Accepts json object containing hex color array for a new image
@@ -120,7 +120,7 @@ function get2Darray(arr) {
 // e.g. getRange(3) = {"0%, 33.3%","33.4%, 66.6%", "66.7%, 100%"}
 function getRange(num) {
     let result = new Array(num);
-    let increment = Number(100 / num); 
+    let increment = Number(100 / num);
     for (let i = 0; i < result.length; i++) {
         let start, end;
         if (i == 0) {
@@ -202,25 +202,33 @@ function convertImage(reader) {
 function preview_image(event) {
     var reader = new FileReader();
     reader.onload = function () {
-        convertImage(reader);
+        var myImgOutput = document.getElementById('myImg');
+        //var previewCanvasOutput = document.getElementById('previewCanvas');
+        myImgOutput.src = reader.result;
+        //previewCanvasOutput.src = reader.result        
     }
     reader.readAsDataURL(event.target.files[0]);
+    convertImage(reader);
 }
 
-//process image
+// Proccess image on upload button press
 // TODO change canvas to 16x16 and replace image preview with old method
 function uploadImage() {
     var canvas = document.getElementById("myCanvas");
     var context = canvas.getContext('2d');
     const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
-    console.log(data.length);
+    assert((data.length / 4) === 256, "Unexpected data size in uploadImage");
+    var result = new Array(0); //should be 256
     for (let i = 0; i < data.length; i += 4) {
         const red = data[i];
         const green = data[i + 1];
         const blue = data[i + 2];
-        const alpha = data[i + 3];
+        // const alpha = data[i + 3]; ignore alpha value
+        result.push(rgbToHex(red, green, blue));
     }
+    assert(result.length === 256, "Unexpected array size in uploadImage");
+    console.log(result);
 }
 
 // converts an r, g or b value to its hex equivalent
@@ -232,4 +240,11 @@ function componentToHex(c) {
 // converts a set of r, g and b values to its hex equivalent
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+// testing
+function assert(condition, message) {
+    if (!condition) {
+        throw new Error(message || "Assertion failed");
+    }
 }
