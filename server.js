@@ -13,37 +13,36 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/favicon.ico', express.static(__dirname + 'public/images/favicon.ico')); // favicon setup
 
 
-
-// when the user makes a get request to '/' (meaning http://{website}/ -- but in our case, http://localhost:3000/)
-// send them the file `FILENAME`
-app.get('/', (req, res) => {
-  console.log("Loading index");
-  res.sendFile(__dirname + '/index.html');
-});
-
-
-// try it with a different suffix! go to http://localhost:3000/ping
-app.get('/ping', (req, res) => {
-  console.log("Incoming GET request");
-  res.json('pong');
-});
-
-// sends the animation json
-app.get('/data', (req, res) => {
-  console.log("GET data");
-  res.json(getJsonData());
-});
-
 // listen at specified port
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
 
-// receives image data from the server
+// when the user makes a get request to '/' (meaning http://{website}/ -- but in our case, http://localhost:3000/)
+// send them the file `FILENAME`
+app.get('/', (req, res) => {
+  console.log('Loading index');
+  res.sendFile(__dirname + '/index.html');
+});
+
+// try it with a different suffix! go to http://localhost:3000/ping
+app.get('/ping', (req, res) => {
+  console.log('Incoming GET request');
+  res.json('pong');
+});
+
+// GET request for the animation-data json
+app.get('/data', (req, res) => {
+  console.log('GET request for /data');
+  res.json(getJsonData());
+});
+
+// receives image data from the server and inserts it into the data file
 app.post('/data', (req, res) => {
   console.log('POST');
-  var newjson = req.body;
-  console.log(newjson);
+  var newjson = verifyAnimationJson(req);
+  //var newjson = req.body;
+  console.log(newjson.length);
   if (newjson.length > 0) {
     res.sendStatus(200);
     var filejson = getJsonData();
@@ -61,7 +60,7 @@ app.post('/data', (req, res) => {
 
 // update jsonData variable from file
 function getJsonData() {
-  console.log('reading json file');
+  console.log('reading from data.json file');
   return JSON.parse(readFileSync(__dirname + '/public/data/data.json', 'utf8'));
 }
 
@@ -73,4 +72,24 @@ function writeToFile(file, data) {
     // success case, the file was saved
     console.log('File overwritten: ' + file);
   });
+}
+
+function verifyAnimationJson(input) {
+  assert(input != null, 'input is null');
+  input = input.body;
+  console.log(input);
+  //input = JSON.parse(input);
+  assert(input.name != undefined, 'name is undefined');
+  assert(input.frameDuration != undefined, 'name is undefined');
+  assert(input.repeatCount != undefined, 'name is undefined');
+  assert(input.frames != undefined, 'name is undefined');
+  assert(input.frames.length > 0, 'name is undefined');
+  return input;
+}
+
+// testing
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message || 'Assertion failed');
+  }
 }

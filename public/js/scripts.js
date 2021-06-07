@@ -209,8 +209,9 @@ function preview_image(event) {
 
 function uploadImage() {
     let image = imageToHexArray();
-    console.log(image);
-    post(image);
+    let validJson = getNewJson('Johnson', 200, 12, image);
+    console.log(validJson);
+    post(validJson);
 }
 
 // Proccess image on 'upload button' press
@@ -240,7 +241,7 @@ function componentToHex(c) {
 
 // converts a set of r, g and b values to its hex equivalent
 function rgbToHex(r, g, b) {
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    return "0x" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
 // testing
@@ -248,4 +249,14 @@ function assert(condition, message) {
     if (!condition) {
         throw new Error(message || "Assertion failed");
     }
+}
+
+function getNewJson(name, frameDuration, repeatCount, frames) {
+    var result = {}
+    result.name = name;
+    result.frameDuration = frameDuration;
+    result.repeatCount = repeatCount;
+    result.frames = [];
+    result.frames[0] = frames;
+    return result;
 }
