@@ -180,10 +180,10 @@ function jsonFormToServer() {
     }
 }
 
-function imgToCanvas(reader) {
+function imgToCanvas() {
     //create image
     var img = new Image();
-    img.src = reader.result;
+    img.src = document.getElementById('myImg').src;
     //get canvas from html by element ID
     var canvas = document.getElementById("myCanvas");
     var context = canvas.getContext('2d');
@@ -204,7 +204,12 @@ function preview_image(event) {
         imgToCanvas(reader);
     }
     reader.readAsDataURL(event.target.files[0]);
-    imageToHexArray();
+    //imageToHexArray();
+}
+
+function uploadImage() {
+    console.log(imageToHexArray());
+    //post(imageToHexArray);
 }
 
 // Proccess image on 'upload button' press
@@ -224,6 +229,7 @@ function imageToHexArray() {
     }
     assert(result.length === 256, "Unexpected array size in uploadImage");
     console.log(result);
+    return result;
 }
 
 // converts an r, g or b value to its hex equivalent

@@ -16,14 +16,14 @@
 
 <body>
   <br><br>
-  <img id="myImg" src="#" width="100" height="100">
+  <img id="myImg" src="#" width="100" height="100" onload="imgToCanvas()">
   <input type="file" accept="image/*" onchange="preview_image(event)">
   <br><br>
-
-  <button onclick="uploadImage()">Upload</button>
-  <!--Make the canvas hidd-->
   <canvas id="myCanvas" width="16" height="16"></canvas>
-  
+  <button onclick="uploadImage()">Upload</button>
+  <!--Make the canvas hidden-->
+
+
   <h1>Image queue:</h1>
   <div id="imageQueue"></div>
 </body>
