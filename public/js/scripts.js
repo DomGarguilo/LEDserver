@@ -8,10 +8,9 @@ function main() {
         const animationCount = v.animationList.length;
         for (let i = 0; i < animationCount; i++) {
             // get css header for each animation
-            let ranges = getRange(v.animationList[i].frames.length);
             let data = v.animationList[i];
             // get css formatted color array
-            let cssArray = generateFrameSet(10, ranges, data);
+            let cssArray = generateFrameSet(10, data);
             // get css rules to cycle through frames in animation
             let cssDetails = generateCssDetails(data.name, 2);
             // get html tag to refference the animation
@@ -22,7 +21,6 @@ function main() {
             addCss(cssDetails);
         }
     });
-
 }
 
 // inserts css into stylesheet
@@ -67,7 +65,8 @@ function generateFrame(pixelSize, frameRange, data) {
 }
 
 // wraps the color array with additional CSS for displaying the frame
-function generateFrameSet(pixelSize, rangeList, data) {
+function generateFrameSet(pixelSize, data) {
+    let rangeList = getRange(data.frames.length);
     let result = '@keyframes ' + data.name + ' {';
     let frameList = data.frames;
     for (let i = 0; i < frameList.length; i++) {
@@ -156,7 +155,7 @@ function generateCssDetails(name, seconds) {
     let result = '.' + name + ` {
         display: block;
         margin-bottom: 200px;
-        animation: `+ name + `2s infinite;
+        animation: `+ name + ` 2s infinite;
         -webkit-animation: `+ name + ` 2s infinite;
         -moz-animation: `+ name + ` 2s infinite;
         -o-animation: `+ name + ` 2s infinite;
@@ -181,12 +180,12 @@ function jsonFormToServer() {
     }
 }
 
-function convertImage(reader) {
+function imgToCanvas(reader) {
     //create image
     var img = new Image();
     img.src = reader.result;
-    //get canvas from html
-    var canvas = document.getElementById("hiddenCanvas");
+    //get canvas from html by element ID
+    var canvas = document.getElementById("myCanvas");
     var context = canvas.getContext('2d');
     //scale image to fit canvas
     var scale = Math.min(canvas.width / img.width, canvas.height / img.height);
@@ -201,16 +200,15 @@ function preview_image(event) {
     var reader = new FileReader();
     reader.onload = function () {
         var myImgOutput = document.getElementById('myImg');
-        myImgOutput.src = reader.result; 
-        convertImage(reader);     
+        myImgOutput.src = reader.result;
+        imgToCanvas(reader);
     }
     reader.readAsDataURL(event.target.files[0]);
-    
+    imageToHexArray();
 }
 
-// Proccess image on upload button press
-// TODO change canvas to 16x16 and replace image preview with old method
-function uploadImage() {
+// Proccess image on 'upload button' press
+function imageToHexArray() {
     var canvas = document.getElementById("myCanvas");
     var context = canvas.getContext('2d');
     const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
