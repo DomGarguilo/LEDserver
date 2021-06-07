@@ -179,8 +179,6 @@ function jsonFormToServer() {
     } catch (e) {
         console.log('Error sending json' + e);
     }
-
-
 }
 
 function convertImage(reader) {
@@ -188,7 +186,7 @@ function convertImage(reader) {
     var img = new Image();
     img.src = reader.result;
     //get canvas from html
-    var canvas = document.getElementById("myCanvas");
+    var canvas = document.getElementById("hiddenCanvas");
     var context = canvas.getContext('2d');
     //scale image to fit canvas
     var scale = Math.min(canvas.width / img.width, canvas.height / img.height);
@@ -203,12 +201,11 @@ function preview_image(event) {
     var reader = new FileReader();
     reader.onload = function () {
         var myImgOutput = document.getElementById('myImg');
-        //var previewCanvasOutput = document.getElementById('previewCanvas');
-        myImgOutput.src = reader.result;
-        //previewCanvasOutput.src = reader.result        
+        myImgOutput.src = reader.result; 
+        convertImage(reader);     
     }
     reader.readAsDataURL(event.target.files[0]);
-    convertImage(reader);
+    
 }
 
 // Proccess image on upload button press
