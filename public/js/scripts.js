@@ -208,8 +208,9 @@ function preview_image(event) {
 }
 
 function uploadImage() {
-    console.log(imageToHexArray());
-    //post(imageToHexArray);
+    let image = imageToHexArray();
+    console.log(image);
+    post(image);
 }
 
 // Proccess image on 'upload button' press
@@ -228,7 +229,6 @@ function imageToHexArray() {
         result.push(rgbToHex(red, green, blue));
     }
     assert(result.length === 256, "Unexpected array size in uploadImage");
-    console.log(result);
     return result;
 }
 
