@@ -112,7 +112,18 @@ function get2Darray(arr) {
         }
     }
     // reverse every other line in array (needed for image display)
-    return reverseEveryOther(result);
+    return reverseEveryOtherCol(result);
+}
+
+// converts a 2D array to a 1D array
+function get1Darray(arr) {
+    let result = new Array();
+    for (let i = 0; i < arr.length; i++) {
+        for (let j = 0; j < arr[i].length; j++) {
+            result.push(arr[i][j]);
+        }
+    }
+    return result;
 }
 
 // takes a number and returns a range of percents
@@ -134,9 +145,9 @@ function getRange(num) {
     return result;
 }
 
-// reverses every other row since in the raw array
-// every other is reversed since thats how the physical matrix needs it
-function reverseEveryOther(matrix) {
+// reverses every other row in a 2D array
+// thats how the physical matrix needs it
+function reverseEveryOtherCol(matrix) {
     for (let col = 0; col < matrix[0].length; col++) {
         if (col % 2 == 1) {
             for (let row = 0; row < matrix.length / 2; row++) {
@@ -147,6 +158,23 @@ function reverseEveryOther(matrix) {
         }
     }
     return matrix;
+}
+
+// reverse every other row in a 2D array
+function reverseEveryOtherRow(arr) {
+    let result = Array.from(Array(16), () => new Array());
+    for (let i = 0; i < arr.length; i++) {
+        if (i % 2 == 0) {
+            for (let j = 0; j < arr[i].length; j++) {
+                result[i].push(arr[i][j]);
+            }
+        } else {
+            for (let j = arr[i].length-1; j >= 0; j--) {
+                result[i].push(arr[i][j]);
+            }
+        }
+    }
+    return result;
 }
 
 // returns the css animation rules
@@ -209,6 +237,13 @@ function preview_image(event) {
 
 function uploadImage() {
     let image = imageToHexArray();
+    console.log(image);
+    image = get2Darray(image);
+    console.log(image);
+    image = reverseEveryOtherRow(image);
+    console.log(image);
+    image = get1Darray(image);
+    console.log(image);
     let validJson = getNewJson('Johnson', 200, 12, image);
     console.log(validJson);
     post(validJson);

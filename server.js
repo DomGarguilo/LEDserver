@@ -40,21 +40,23 @@ app.get('/data', (req, res) => {
 // receives image data from the server and inserts it into the data file
 app.post('/data', (req, res) => {
   console.log('POST');
-  var newjson = verifyAnimationJson(req);
-  //var newjson = req.body;
-  console.log(newjson.length);
-  if (newjson.length > 0) {
-    res.sendStatus(200);
-    var filejson = getJsonData();
-    let i;
-    for (i = 0; i < newjson.length; i++) {
-      filejson.animationList.push(newjson[i]);
-    }
-    writeToFile(__dirname + '/public/data/data.json', JSON.stringify(filejson));
-  } else {
-    console.log('errpr');
-    res.sendStatus(200).end('length 0 json recieved');
-  }
+  var newjson = verifyAnimationJson(req.body);
+  console.log(newjson.name);
+  console.log(newjson.frameDuration);
+  console.log(newjson.repeatCount);
+  console.log(newjson.frames.length);
+  console.log(newjson.frames[0].length);
+  res.sendStatus(200);
+  var filejson = getJsonData();
+  //let i;
+  //for (i = 0; i < newjson.length; i++) {
+  console.log(filejson.animationList.length);
+  filejson.animationList.push(newjson);
+  console.log(filejson.animationList.length);
+  //}
+  writeToFile(__dirname + '/public/data/data.json', JSON.stringify(filejson));
+  //console.log('errpr');
+  //res.sendStatus(200).end('length 0 json recieved');
 
 });
 
@@ -76,8 +78,7 @@ function writeToFile(file, data) {
 
 function verifyAnimationJson(input) {
   assert(input != null, 'input is null');
-  input = input.body;
-  console.log(input);
+  //console.log(input);
   //input = JSON.parse(input);
   assert(input.name != undefined, 'name is undefined');
   assert(input.frameDuration != undefined, 'name is undefined');
