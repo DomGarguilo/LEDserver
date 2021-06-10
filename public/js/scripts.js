@@ -1,20 +1,47 @@
-displayImagePreview();
+main();
+
+// main function to display the image previews on the page
+function main() {
+    // get image data from server
+    getJsonData().then((v) => {
+        // loops through each animation in image data
+        const animationCount = v.animationList.length;
+        for (let i = 0; i < animationCount; i++) {
+            // get css header for each animation
+            let data = v.animationList[i];
+            // get css formatted color array
+            let cssArray = generateFrameSet(10, data);
+            // get css rules to cycle through frames in animation
+            let cssDetails = generateCssDetails(data.name, 2);
+            // get html tag to refference the animation
+            let html = generateHtmlTag(data.name);
+            // add the various parts to the page
+            addHtml(html, 'imageQueue');
+            addCss(cssArray);
+            addCss(cssDetails);
+        }
+    });
+}
 
 // inserts css into stylesheet
 function addCss(cssCode) {
+    // creates the HTMLStyleElement
     let styleElement = document.createElement("style");
+    // I think this checks if theres a stylesheet and creates one if not exists
     if (styleElement.styleSheet) {
         styleElement.styleSheet.cssText = cssCode;
-    } else {
+    } else { // if one exists append to it
         styleElement.appendChild(document.createTextNode(cssCode));
     }
+    // appends new HTMLStyleElement to the document
     document.getElementsByTagName("head")[0].appendChild(styleElement);
 }
 
 // fetches the image data json from server
+// comes in array of hex color vals so other functions convert it to css-acceptable code
 async function getJsonData() {
-    let response = await fetch(document.URL + 'data');
-    //var response = await fetch('https://led-matrix-server.herokuapp.com/')
+    let endpoint = document.URL + 'data';
+    let response = await fetch(endpoint);
     jsonData = await response.json();
     return jsonData;
 }
@@ -24,7 +51,6 @@ function generateFrame(pixelSize, frameRange, data) {
     let result = frameRange + ' {box-shadow:';
     for (let i = 1; i <= 16; i++) {
         for (let j = 1; j <= 16; j++) {
-
             result += (pixelSize * i).toString() + 'px ' + (pixelSize * j).toString() + 'px 0 0 #' + data[i - 1][j - 1];
             if (j == 16 && i == 16) {
                 result += ';';
@@ -39,34 +65,20 @@ function generateFrame(pixelSize, frameRange, data) {
 }
 
 // wraps the color array with additional CSS for displaying the frame
-function generateFrameSet(pixelSize, rangeList, data) {
+function generateFrameSet(pixelSize, data) {
+    let rangeList = getRange(data.frames.length);
     let result = '@keyframes ' + data.name + ' {';
     let frameList = data.frames;
     for (let i = 0; i < frameList.length; i++) {
-        result = result + generateFrame(pixelSize, rangeList[i], get2Darray(frameList[i]));
+        result = result + generateFrame(pixelSize, rangeList[i], reverseEveryOtherCol(get2Darray(frameList[i])));
     }
     result = result + '}'
     return result;
 }
 
-function displayImagePreview() {
-    getJsonData().then((v) => {
-        const animationCount = v.animationList.length;
-        for (let i = 0; i < animationCount; i++) {
-            let ranges = getRange(v.animationList[i].frames.length);
-            let data = v.animationList[i];
-            let cssArray = generateFrameSet(10, ranges, data);
-            let cssDetails = generateCssDetails(data.name, 2);
-            let html = generateHtmlTag(data.name);
-            addHtml(html, 'imageQueue');
-            addCss(cssArray);
-            addCss(cssDetails);
-        }
-    });
 
-}
-
-// makes a POST req to the server. Accepts json object
+// makes a POST req to the server
+// Accepts json object containing hex color array for a new image
 function post(json) {
     fetch("/data", {
         method: "POST",
@@ -84,13 +96,14 @@ function addHtml(html, insertTag) {
     document.getElementById(insertTag).innerHTML += html;
 }
 
-// returns div tag for animation
+// create and return div tag for animation based on its name
 function generateHtmlTag(name) {
     let result = `<div class="` + name + `"></div>`;
     return result;
 }
 
 // converts a 1D array to a 2D array
+// hardcoded 256 1D array -> 16x16 2D array
 function get2Darray(arr) {
     let result = Array.from(Array(16), () => new Array(16));
     for (let i = 0; i < 16; i++) {
@@ -98,7 +111,8 @@ function get2Darray(arr) {
             result[i][j] = arr[(j * 16) + i];
         }
     }
-    return reverseEveryOther(result);
+    // reverse every other line in array (needed for image display)
+    return result;
 }
 
 // takes a number and returns a range of percents
@@ -120,8 +134,9 @@ function getRange(num) {
     return result;
 }
 
-// reverses every other row since in the raw array, every other is reversed since thats how the physical matrix needs it
-function reverseEveryOther(matrix) {
+// reverses every other row in a 2D array
+// thats how the physical matrix needs it
+function reverseEveryOtherCol(matrix) {
     for (let col = 0; col < matrix[0].length; col++) {
         if (col % 2 == 1) {
             for (let row = 0; row < matrix.length / 2; row++) {
@@ -134,12 +149,30 @@ function reverseEveryOther(matrix) {
     return matrix;
 }
 
-// returns the css animation details
+// reverse every other row in a 2D array
+function reverseEveryOtherRow(arr) {
+    let result = Array.from(Array(16), () => new Array());
+    for (let i = 0; i < arr.length; i++) {
+        if (i % 2 == 0) {
+            for (let j = 0; j < arr[i].length; j++) {
+                result[i].push(arr[i][j]);
+            }
+        } else {
+            for (let j = arr[i].length - 1; j >= 0; j--) {
+                result[i].push(arr[i][j]);
+            }
+        }
+    }
+    return result;
+}
+
+// returns the css animation rules
+// tells it how big and how fast to display frames and such
 function generateCssDetails(name, seconds) {
     let result = '.' + name + ` {
         display: block;
         margin-bottom: 200px;
-        animation: `+ name + `2s infinite;
+        animation: `+ name + ` 2s infinite;
         -webkit-animation: `+ name + ` 2s infinite;
         -moz-animation: `+ name + ` 2s infinite;
         -o-animation: `+ name + ` 2s infinite;
@@ -147,25 +180,133 @@ function generateCssDetails(name, seconds) {
     return result;
 }
 
-// function to pull the form data and send it to the server
-function submitJson() {
-    console.log("here:");
-    let formEl = document.forms.submitForm;
-    var formData = new FormData(formEl);
-    var name = formData.get('name');
-    console.log(name);
+// accepts a json from a form and uploads it to the server
+// deprecated and replaced by image upload
+function jsonFormToServer() {
+    try {
+        let formEl = document.forms.myform;
+        var formData = new FormData(formEl);
+        var name = formData.get('fullname');
+        if (name === undefined) {
+            console.log('Empty form');
+        } else {
+            post(JSON.parse(name));
+        }
+    } catch (e) {
+        console.log('Error sending json' + e);
+    }
 }
 
-function run_this_function() {
-    // your code goes here
-    console.log("mmm");
-    return 'running';
+function imgToCanvas() {
+    //create image
+    var img = new Image();
+    img.src = document.getElementById('myImg').src;
+    //get canvas from html by element ID
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext('2d');
+    //scale image to fit canvas
+    var scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    var x = (canvas.width / 2) - (img.width / 2) * scale;
+    var y = (canvas.height / 2) - (img.height / 2) * scale;
+    //draw canvas to screen
+    context.drawImage(img, x, y, img.width * scale, img.height * scale);
 }
 
-function myFunction() {
-    let formEl = document.forms.myform;
-    var formData = new FormData(formEl);
-    var name = formData.get('fullname');
-    post(JSON.parse(name));
-    console.log('HERE');
+// displays preview of uploaded image
+function preview_image(event) {
+    var reader = new FileReader();
+    reader.onload = function () {
+        var myImgOutput = document.getElementById('myImg');
+        myImgOutput.src = reader.result;
+        imgToCanvas(reader);
+    }
+    reader.readAsDataURL(event.target.files[0]);
+    //imageToHexArray();
+}
+
+function uploadImage() {
+    let image = imageToHexArray();
+    image = hexArrayToUpload(image);
+    let validJson = getNewJson(getRandID(), 200, 12, image);
+    console.log(validJson);
+    post(validJson);
+}
+
+// converts an array to the serpentine pattern
+// i.e. every other row of image reversed
+function hexArrayToUpload(arr) {
+    let result = new Array();
+    for (let i = 0; i < 16; i++) {
+        if (i % 2 == 0) {
+            for (let j = 0; j < 16; j++) {
+                result.push(arr[(i * 16) + j]);
+            }
+        } else {
+            for (let j = 15; j >= 0; j--) {
+                result.push(arr[(i * 16) + j]);
+            }
+        }
+    }
+    assert(result.length == 256, "wrong size in hex2upload " + result.length);
+    return result;
+}
+
+// Proccess image on 'upload button' press
+function imageToHexArray() {
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext('2d');
+    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+    assert((data.length / 4) === 256, "Unexpected data size in uploadImage");
+    var result = new Array(0); //should be 256
+    for (let i = 0; i < data.length; i += 4) {
+        const red = data[i];
+        const green = data[i + 1];
+        const blue = data[i + 2];
+        // const alpha = data[i + 3]; ignore alpha value
+        result.push(rgbToHex(red, green, blue));
+    }
+    assert(result.length === 256, "Unexpected array size in uploadImage");
+    return result;
+}
+
+// converts an r, g or b value to its hex equivalent
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+// converts a set of r, g and b values to its hex equivalent
+function rgbToHex(r, g, b) {
+    return "0x" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+// testing
+function assert(condition, message) {
+    if (!condition) {
+        throw new Error(message || "Assertion failed");
+    }
+}
+
+function getNewJson(name, frameDuration, repeatCount, frames) {
+    var result = {}
+    result.name = name;
+    result.frameDuration = frameDuration;
+    result.repeatCount = repeatCount;
+    result.frames = [];
+    result.frames[0] = frames;
+    return result;
+}
+
+function getRandID() {
+    let result = 'ID';
+    for(let i = 0; i < 10; i ++) {
+        let tempInt = Math.floor((Math.random() * 26) + 65);
+        console.log(tempInt);
+        let tempChar = String.fromCharCode(tempInt);
+        console.log(tempChar);
+        result += tempChar;
+    }
+    console.log(result);
+    return result;
 }
