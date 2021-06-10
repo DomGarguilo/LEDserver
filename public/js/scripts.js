@@ -70,7 +70,7 @@ function generateFrameSet(pixelSize, data) {
     let result = '@keyframes ' + data.name + ' {';
     let frameList = data.frames;
     for (let i = 0; i < frameList.length; i++) {
-        result = result + generateFrame(pixelSize, rangeList[i], get2Darray(frameList[i]));
+        result = result + generateFrame(pixelSize, rangeList[i], reverseEveryOtherCol(get2Darray(frameList[i])));
     }
     result = result + '}'
     return result;
@@ -112,17 +112,6 @@ function get2Darray(arr) {
         }
     }
     // reverse every other line in array (needed for image display)
-    return reverseEveryOtherCol(result);
-}
-
-// converts a 2D array to a 1D array
-function get1Darray(arr) {
-    let result = new Array();
-    for (let i = 0; i < arr.length; i++) {
-        for (let j = 0; j < arr[i].length; j++) {
-            result.push(arr[i][j]);
-        }
-    }
     return result;
 }
 
@@ -169,7 +158,7 @@ function reverseEveryOtherRow(arr) {
                 result[i].push(arr[i][j]);
             }
         } else {
-            for (let j = arr[i].length-1; j >= 0; j--) {
+            for (let j = arr[i].length - 1; j >= 0; j--) {
                 result[i].push(arr[i][j]);
             }
         }
@@ -237,16 +226,29 @@ function preview_image(event) {
 
 function uploadImage() {
     let image = imageToHexArray();
-    console.log(image);
-    image = get2Darray(image);
-    console.log(image);
-    image = reverseEveryOtherRow(image);
-    console.log(image);
-    image = get1Darray(image);
-    console.log(image);
-    let validJson = getNewJson('Johnson', 200, 12, image);
+    image = hexArrayToUpload(image);
+    let validJson = getNewJson(getRandID(), 200, 12, image);
     console.log(validJson);
     post(validJson);
+}
+
+// converts an array to the serpentine pattern
+// i.e. every other row of image reversed
+function hexArrayToUpload(arr) {
+    let result = new Array();
+    for (let i = 0; i < 16; i++) {
+        if (i % 2 == 0) {
+            for (let j = 0; j < 16; j++) {
+                result.push(arr[(i * 16) + j]);
+            }
+        } else {
+            for (let j = 15; j >= 0; j--) {
+                result.push(arr[(i * 16) + j]);
+            }
+        }
+    }
+    assert(result.length == 256, "wrong size in hex2upload " + result.length);
+    return result;
 }
 
 // Proccess image on 'upload button' press
@@ -293,5 +295,18 @@ function getNewJson(name, frameDuration, repeatCount, frames) {
     result.repeatCount = repeatCount;
     result.frames = [];
     result.frames[0] = frames;
+    return result;
+}
+
+function getRandID() {
+    let result = 'ID';
+    for(let i = 0; i < 10; i ++) {
+        let tempInt = Math.floor((Math.random() * 26) + 65);
+        console.log(tempInt);
+        let tempChar = String.fromCharCode(tempInt);
+        console.log(tempChar);
+        result += tempChar;
+    }
+    console.log(result);
     return result;
 }
