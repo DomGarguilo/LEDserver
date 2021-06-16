@@ -16,10 +16,10 @@
 
 <body>
   <br><br>
-  <img id="myImg" src="#" width="100" height="100" onload="imgToCanvas()">
-  <input type="file" accept="image/*" onchange="preview_image(event)">
+  <img id="myImgPreview" src="#" width="100" height="100" onload="imgToCanvas()">
+  <input type="file" accept="image/*" onchange="imagePreview(event)">
   <br><br>
-  <canvas id="myCanvas" width="16" height="16"></canvas>
+  <canvas id="myCanvasPreview" width="16" height="16"></canvas>
   <button onclick="uploadImage()">Upload</button>
   <!--Make the canvas hidden-->
 
