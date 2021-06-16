@@ -239,7 +239,7 @@ function hexArrayToUpload(arr) {
 // Proccess image on 'upload button' press
 function imageToHexArray() {
     // pull image data from preview canvas
-    var canvas = document.getElementById("myCanvas");
+    var canvas = document.getElementById("myCanvasPreview");
     var context = canvas.getContext('2d');
     const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
@@ -291,11 +291,9 @@ function getRandID() {
     let result = 'ID';
     for (let i = 0; i < 10; i++) {
         let tempInt = Math.floor((Math.random() * 26) + 65);
-        console.log(tempInt);
         let tempChar = String.fromCharCode(tempInt);
-        console.log(tempChar);
         result += tempChar;
     }
-    console.log(result);
+    console.log('New UUID: ' + result);
     return result;
 }
