@@ -116,7 +116,7 @@ function post(json) {
         },
         body: JSON.stringify(json)
     }).then(res => {
-        console.log("POST request complete! response:", res);
+        console.log("POST request complete! response:", res.text());
     });
 }
 
