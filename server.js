@@ -64,6 +64,7 @@ app.post('/data', (req, res) => {
   console.log(jsonFromFile.animationList.length);
   //}
 
+  // write data to animation-data file
   try {
     writeToFile(__dirname + '/public/data/data.json', JSON.stringify(jsonFromFile));
   } catch (err) {
@@ -93,7 +94,7 @@ function writeToFile(file, data) {
 // returns an error if incorrect or null if it is correct
 function verifyAnimationJson(input) {
   try {
-    assert(input == null && input != undefined, 'given var is null');
+    assert(input != null && input != undefined, 'given var is null');
     assert(input.name != undefined, 'name is undefined');
     assert(input.frameDuration != undefined, 'frame duration is undefined');
     assert(input.repeatCount != undefined, 'repeat count is undefined');

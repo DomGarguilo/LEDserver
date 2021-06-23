@@ -115,8 +115,9 @@ function post(json) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(json)
-    }).then(res => {
-        console.log("POST request complete! response:", res.text());
+    }).then((response) => {
+        // make this print correctly. maybe async or something
+        console.log("POST request complete! response:", response);
     });
 }
 
