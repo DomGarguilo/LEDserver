@@ -21,25 +21,25 @@ app.listen(port, () => {
 // when the user makes a get request to '/' (meaning http://{website}/ -- but in our case, http://localhost:3000/)
 // send them the file `FILENAME`
 app.get('/', (req, res) => {
-  console.log('Loading index');
+  console.log('Handling GET request for "/". Sending index.html');
   res.sendFile(__dirname + '/index.html');
 });
 
 // try it with a different suffix! go to http://localhost:3000/ping
 app.get('/ping', (req, res) => {
-  console.log('Incoming GET request');
+  console.log('Handling GET request for "/ping"');
   res.json('pong');
 });
 
 // GET request for the animation-data json
 app.get('/data', (req, res) => {
-  console.log('GET request for /data');
+  console.log('Handling GET request for "/data"');
   res.json(getJsonData());
 });
 
 // receives image data from the server and inserts it into the data file
 app.post('/data', (req, res) => {
-  console.log('POST request recieved');
+  console.log('POST request recieved for "/data"');
 
   // verify body of post request is valid format
   var newjson = req.body;
@@ -59,9 +59,10 @@ app.post('/data', (req, res) => {
   var jsonFromFile = getJsonData();
 
   //for (let i = 0; i < newjson.length; i++) {
-  console.log(jsonFromFile.animationList.length);
+  var originalLength = jsonFromFile.animationList.length;
   jsonFromFile.animationList.push(newjson);
-  console.log(jsonFromFile.animationList.length);
+  var newLength = jsonFromFile.animationList.length;
+  console.log('Animation count went from length ' + originalLength + ' to ' + newLength);
   //}
 
   // write data to animation-data file
@@ -76,7 +77,7 @@ app.post('/data', (req, res) => {
 
 // update jsonData variable from file
 function getJsonData() {
-  console.log('reading from data.json file');
+  console.log('Reading from data.json file');
   return JSON.parse(readFileSync(__dirname + '/public/data/data.json', 'utf8'));
 }
 
