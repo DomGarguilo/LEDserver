@@ -21,48 +21,63 @@ app.listen(port, () => {
 // when the user makes a get request to '/' (meaning http://{website}/ -- but in our case, http://localhost:3000/)
 // send them the file `FILENAME`
 app.get('/', (req, res) => {
-  console.log('Loading index');
+  console.log('Handling GET request for "/". Sending index.html');
   res.sendFile(__dirname + '/index.html');
 });
 
 // try it with a different suffix! go to http://localhost:3000/ping
 app.get('/ping', (req, res) => {
-  console.log('Incoming GET request');
+  console.log('Handling GET request for "/ping"');
   res.json('pong');
 });
 
 // GET request for the animation-data json
 app.get('/data', (req, res) => {
-  console.log('GET request for /data');
+  console.log('Handling GET request for "/data"');
   res.json(getJsonData());
 });
 
 // receives image data from the server and inserts it into the data file
 app.post('/data', (req, res) => {
-  console.log('POST');
-  var newjson = verifyAnimationJson(req.body);
-  console.log(newjson.name);
-  console.log(newjson.frameDuration);
-  console.log(newjson.repeatCount);
-  console.log(newjson.frames.length);
-  console.log(newjson.frames[0].length);
-  res.sendStatus(200);
-  var filejson = getJsonData();
-  //let i;
-  //for (i = 0; i < newjson.length; i++) {
-  console.log(filejson.animationList.length);
-  filejson.animationList.push(newjson);
-  console.log(filejson.animationList.length);
+  console.log('POST request recieved for "/data"');
+
+  // verify body of post request is valid format
+  var newjson = req.body;
+  var passed = verifyAnimationJson(newjson);
+  if (passed != null) {
+    res.sendStatus(500).end('Recieved data has incorrect format and was not inserted');
+    throw new Error(passed);
+  }
+
+  console.log('Incoming data has passed inspection. New entry details:');
+  console.log('ID: ' + newjson.name);
+  console.log('Frame duration: ' + newjson.frameDuration);
+  console.log('Repeat count: ' + newjson.repeatCount);
+  console.log('Frame count: ' + newjson.frames.length);
+
+  // retrieve animation json from file
+  var jsonFromFile = getJsonData();
+
+  //for (let i = 0; i < newjson.length; i++) {
+  var originalLength = jsonFromFile.animationList.length;
+  jsonFromFile.animationList.push(newjson);
+  var newLength = jsonFromFile.animationList.length;
+  console.log('Animation count went from length ' + originalLength + ' to ' + newLength);
   //}
-  writeToFile(__dirname + '/public/data/data.json', JSON.stringify(filejson));
-  //console.log('errpr');
-  //res.sendStatus(200).end('length 0 json recieved');
+
+  // write data to animation-data file
+  try {
+    writeToFile(__dirname + '/public/data/data.json', JSON.stringify(jsonFromFile));
+  } catch (err) {
+    res.sendStatus(501).end('Data verified but could not insert');
+  }
+  res.sendStatus(200).end('Succesfully inserted data');
 
 });
 
 // update jsonData variable from file
 function getJsonData() {
-  console.log('reading from data.json file');
+  console.log('Reading from data.json file');
   return JSON.parse(readFileSync(__dirname + '/public/data/data.json', 'utf8'));
 }
 
@@ -76,16 +91,24 @@ function writeToFile(file, data) {
   });
 }
 
+// verify that given input is correct format to be inserted into data json
+// returns an error if incorrect or null if it is correct
 function verifyAnimationJson(input) {
-  assert(input != null, 'input is null');
-  //console.log(input);
-  //input = JSON.parse(input);
-  assert(input.name != undefined, 'name is undefined');
-  assert(input.frameDuration != undefined, 'name is undefined');
-  assert(input.repeatCount != undefined, 'name is undefined');
-  assert(input.frames != undefined, 'name is undefined');
-  assert(input.frames.length > 0, 'name is undefined');
-  return input;
+  try {
+    assert(input != null && input != undefined, 'given var is null');
+    assert(input.name != undefined, 'name is undefined');
+    assert(input.frameDuration != undefined, 'frame duration is undefined');
+    assert(input.repeatCount != undefined, 'repeat count is undefined');
+    assert(input.frames != undefined, 'frame list is undefined');
+    var frameListLength = input.frames.length;
+    assert(frameListLength > 0, 'frame list has no entries');
+    for (let i = 0; i < frameListLength; i++) {
+      assert(input.frames[i].length == 256, i + 'th entry length in color array frame list != 256');
+    }
+    return null;
+  } catch (err) {
+    return err;
+  }
 }
 
 // testing
