@@ -5,6 +5,36 @@ body {
 h1 {
     color: red;
 }
+
+/* (A) LIST STYLES */
+
+.slist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.slist li {
+    margin: 5px;
+    padding: 10px;
+    border: 1px solid #333;
+    background: #eaeaea;
+}
+
+/* (B) DRAG-AND-DROP HINT */
+
+.slist li.hint {
+    background: #fea;
+}
+
+.slist li.active {
+    background: #ffd4d4;
+}
+
+html, body {
+    font-family: arial, sans-serif;
+}
+
 /*
 .pixelart-to-css {
     position: absolute;
@@ -35,4 +65,5 @@ h1 {
         height: 1px;
         width: 1px;
     }*/
+
 /*}

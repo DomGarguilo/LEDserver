@@ -15,6 +15,18 @@
 </head>
 
 <body>
+  <!--<script src="sort-list.js"></script> (A) LOAD CSS + JS<link rel="stylesheet" href="sort-list.css" /> -->
+
+
+
+  <!-- (C) INIT ON PAGE LOAD -->
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      displayPreviews();
+      //slist("sortlist");
+    });
+  </script>
+
   <br><br>
   <img id="myImgPreview" src="#" width="100" height="100" onload="imgToCanvas()">
   <input type="file" accept="image/*" onchange="imagePreview(event)">
@@ -26,6 +38,13 @@
 
   <h1>Image queue:</h1>
   <div id="imageQueue"></div>
+
+  <!-- (B) THE LIST -->
+  <ul id="sortlist">
+    <li>"working list element 1"</li>
+    <li>"working list element 2"</li>
+  </ul>
+
 </body>
 
 </html
