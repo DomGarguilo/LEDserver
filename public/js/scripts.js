@@ -1,5 +1,28 @@
-//displayPreviews();
+// main function to display the image previews on the page
+function displayPreviews() {
+    // get image data from server
+    getJsonData().then((v) => {
+        // loops through each animation in image data
+        const animationCount = v.animationList.length;
+        for (let i = 0; i < animationCount; i++) {
+            // get css header for each animation
+            let data = v.animationList[i];
+            // get css formatted color array
+            let cssArray = generateFrameSet(10, data);
+            // get css rules to cycle through frames in animation
+            let cssDetails = generateCssDetails(data.name, 2);
+            // get html tag to refference the animation
+            let html = generateHtmlListElement(data.name);
+            // add the various parts to the page
+            addHtml(html);
+            addCss(cssArray);
+            addCss(cssDetails);
+        }
+        console.log('Previews rendered to screen');
+    });
+}
 
+// makes list draggable. takes lists id as input
 function slist(target) {
     // (A) GET LIST + ATTACH CSS CLASS
     target = document.getElementById(target);
@@ -59,31 +82,6 @@ function slist(target) {
             }
         });
     }
-}
-
-// main function to display the image previews on the page
-function displayPreviews() {
-    // get image data from server
-    getJsonData().then((v) => {
-        // loops through each animation in image data
-        const animationCount = v.animationList.length;
-        for (let i = 0; i < animationCount; i++) {
-            // get css header for each animation
-            let data = v.animationList[i];
-            // get css formatted color array
-            let cssArray = generateFrameSet(10, data);
-            // get css rules to cycle through frames in animation
-            let cssDetails = generateCssDetails(data.name, 2);
-            // get html tag to refference the animation
-            let html = generateHtmlListElement(data.name);
-            // add the various parts to the page
-            addHtml(html);
-            addCss(cssArray);
-            addCss(cssDetails);
-        }
-    });
-    slist("sortlist");
-    console.log('Previews rendered to screen');
 }
 
 // inserts css into stylesheet
@@ -365,4 +363,8 @@ function getRandID() {
     }
     console.log('New UUID: ' + result);
     return result;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
