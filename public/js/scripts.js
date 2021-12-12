@@ -1,5 +1,5 @@
 // main function to display the image previews on the page
-function displayPreviews() {
+function createAnimationList(callback) {
     // get image data from server
     getJsonData().then((v) => {
         // loops through each animation in image data
@@ -18,12 +18,14 @@ function displayPreviews() {
             addCss(cssArray);
             addCss(cssDetails);
         }
-        console.log('Previews rendered to screen');
+        console.log('Finished creating list of animations. Now calling slist()');
+        callback(arguments[1]);
     });
 }
 
-// makes list draggable. takes lists id as input
-function slist(target) {
+// makes list draggable. takes the lists' id as input
+function makeListDraggable(target) {
+    console.log("Making list draggable. ID='" + target + "'");
     // (A) GET LIST + ATTACH CSS CLASS
     target = document.getElementById(target);
     target.classList.add("slist");
@@ -173,7 +175,6 @@ function generateHtmlListElement(name) {
     let div = document.createElement("div");
     div.setAttribute('class', name);
     li.appendChild(div);
-    console.log("new list element to insert: " + li)
     return li;
 }
 

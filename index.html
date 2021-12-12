@@ -15,11 +15,12 @@
 </head>
 
 <body>
-  <!-- (C) INIT ON PAGE LOAD -->
+  <!-- INIT ON PAGE LOAD -->
   <script>
     window.addEventListener("DOMContentLoaded", function () {
-      displayPreviews();
-      slist("sortlist");
+      // create the list of animations then...
+      // pass makeListDraggable func as callback along with the lists' id
+      createAnimationList(makeListDraggable, "sortlist");
     });
   </script>
 
@@ -35,17 +36,8 @@
   <h1>Image queue:</h1>
   <div id="imageQueue"></div>
 
-  <!-- (B) THE LIST -->
+  <!-- list of animations -->
   <ul id="sortlist">
-    <li>"working list element 1"</li>
-    <li>
-      <div class="mario"></div>
-    </li>
-    <li>
-      <div class="minecraft"></div>
-    </li>
-    <li>"working list element 2"</li>
-  </ul>
 
 </body>
 
