@@ -15,6 +15,15 @@
 </head>
 
 <body>
+  <!-- INIT ON PAGE LOAD -->
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      // create the list of animations then...
+      // pass makeListDraggable func as callback along with the lists' id
+      createAnimationList(makeListDraggable, "sortlist");
+    });
+  </script>
+
   <br><br>
   <img id="myImgPreview" src="#" width="100" height="100" onload="imgToCanvas()">
   <input type="file" accept="image/*" onchange="imagePreview(event)">
@@ -26,6 +35,10 @@
 
   <h1>Image queue:</h1>
   <div id="imageQueue"></div>
+
+  <!-- list of animations -->
+  <ul id="sortlist">
+
 </body>
 
-</html
+</html>

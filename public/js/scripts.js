@@ -1,7 +1,5 @@
-displayPreviews();
-
 // main function to display the image previews on the page
-function displayPreviews() {
+function createAnimationList(callback) {
     // get image data from server
     getJsonData().then((v) => {
         // loops through each animation in image data
@@ -14,14 +12,78 @@ function displayPreviews() {
             // get css rules to cycle through frames in animation
             let cssDetails = generateCssDetails(data.name, 2);
             // get html tag to refference the animation
-            let html = generateHtmlTag(data.name);
+            let html = generateHtmlListElement(data.name);
             // add the various parts to the page
-            addHtml(html, 'imageQueue');
+            addHtml(html);
             addCss(cssArray);
             addCss(cssDetails);
         }
+        console.log('Finished creating list of animations. Now calling slist()');
+        callback(arguments[1]);
     });
-    console.log('Previews rendered to screen');
+}
+
+// makes list draggable. takes the lists' id as input
+function makeListDraggable(target) {
+    console.log("Making list draggable. ID='" + target + "'");
+    // (A) GET LIST + ATTACH CSS CLASS
+    target = document.getElementById(target);
+    target.classList.add("slist");
+
+    // (B) MAKE ITEMS DRAGGABLE + SORTABLE
+    var items = target.getElementsByTagName("li"), current = null;
+    for (let i of items) {
+        // (B1) ATTACH DRAGGABLE
+        i.draggable = true;
+
+        // (B2) DRAG START - YELLOW HIGHLIGHT DROPZONES
+        i.addEventListener("dragstart", function (ev) {
+            current = this;
+            for (let it of items) {
+                if (it != current) { it.classList.add("hint"); }
+            }
+        });
+
+        // (B3) DRAG ENTER - RED HIGHLIGHT DROPZONE
+        i.addEventListener("dragenter", function (ev) {
+            if (this != current) { this.classList.add("active"); }
+        });
+
+        // (B4) DRAG LEAVE - REMOVE RED HIGHLIGHT
+        i.addEventListener("dragleave", function () {
+            this.classList.remove("active");
+        });
+
+        // (B5) DRAG END - REMOVE ALL HIGHLIGHTS
+        i.addEventListener("dragend", function () {
+            for (let it of items) {
+                it.classList.remove("hint");
+                it.classList.remove("active");
+            }
+        });
+
+        // (B6) DRAG OVER - PREVENT THE DEFAULT "DROP", SO WE CAN DO OUR OWN
+        i.addEventListener("dragover", function (evt) {
+            evt.preventDefault();
+        });
+
+        // (B7) ON DROP - DO SOMETHING
+        i.addEventListener("drop", function (evt) {
+            evt.preventDefault();
+            if (this != current) {
+                let currentpos = 0, droppedpos = 0;
+                for (let it = 0; it < items.length; it++) {
+                    if (current == items[it]) { currentpos = it; }
+                    if (this == items[it]) { droppedpos = it; }
+                }
+                if (currentpos < droppedpos) {
+                    this.parentNode.insertBefore(current, this.nextSibling);
+                } else {
+                    this.parentNode.insertBefore(current, this);
+                }
+            }
+        });
+    }
 }
 
 // inserts css into stylesheet
@@ -38,9 +100,10 @@ function addCss(cssCode) {
     document.getElementsByTagName("head")[0].appendChild(styleElement);
 }
 
-// inserts html after provided div tag
-function addHtml(htmlToInsert, insertAfterThisDivTag) {
-    document.getElementById(insertAfterThisDivTag).innerHTML += htmlToInsert;
+// inserts html into list
+function addHtml(htmlToInsert) {
+    let list = document.getElementById("sortlist");
+    list.appendChild(htmlToInsert);
 }
 
 // generates the css color array for a single frame of animation
@@ -97,13 +160,22 @@ function getRange(num) {
 function generateCssDetails(name, seconds) {
     let result = '.' + name + ` {
         display: block;
-        margin-bottom: 200px;
+        margin-bottom: 170px;
         animation: `+ name + ` 2s infinite;
         -webkit-animation: `+ name + ` 2s infinite;
         -moz-animation: `+ name + ` 2s infinite;
         -o-animation: `+ name + ` 2s infinite;
     }`
     return result;
+}
+
+// return an html list element containing the div for an animation
+function generateHtmlListElement(name) {
+    let li = document.createElement("li");
+    let div = document.createElement("div");
+    div.setAttribute('class', name);
+    li.appendChild(div);
+    return li;
 }
 
 // makes a POST req to the server
@@ -131,11 +203,6 @@ async function getJsonData() {
     return jsonData;
 }
 
-// create and return the html for a div tag for animation
-function generateHtmlTag(name) {
-    let result = `<div class="` + name + `"></div>`;
-    return result;
-}
 
 // converts a 1D array to a 2D array
 // hardcoded 256 1D array -> 16x16 2D array
