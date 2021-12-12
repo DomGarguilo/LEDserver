@@ -365,7 +365,3 @@ function getRandID() {
     console.log('New UUID: ' + result);
     return result;
 }
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
