@@ -1,9 +1,23 @@
 // main function to display the image previews on the page
 function createAnimationList(callback) {
     // get image data from server
-    getJsonData().then((v) => {
-        // loops through each animation in image data
-        const animationCount = v.animationList.length;
+    let order;
+    getJsonOrder().then((v) => {
+        order = v.order;
+        console.log('Animation order: ' + v.order);
+    }).then(getJsonData().then((v) => {
+        let animationCount = v.animationList.length;
+        if (order.length != animationCount) {
+            console.warn('missmatch in length of animations and animation order ' + order.length + ' vs. ' + animationCount);
+        }
+        // loop through animation order to create ordered html tags
+        for (let i = 0; i < order.length; i++) {
+            let name = order[i];
+            // get html tag to refference the animation
+            let html = generateHtmlListElement(name);
+            addHtml(html);
+        }
+        // loop through the rest of the animation data to create the animations
         for (let i = 0; i < animationCount; i++) {
             // get css header for each animation
             let data = v.animationList[i];
@@ -11,16 +25,14 @@ function createAnimationList(callback) {
             let cssArray = generateFrameSet(10, data);
             // get css rules to cycle through frames in animation
             let cssDetails = generateCssDetails(data.name, 2);
-            // get html tag to refference the animation
-            let html = generateHtmlListElement(data.name);
+
             // add the various parts to the page
-            addHtml(html);
             addCss(cssArray);
             addCss(cssDetails);
         }
         console.log('Finished creating list of animations. Now calling slist()');
         callback(arguments[1]);
-    });
+    }));
 }
 
 // makes list draggable. takes the lists' id as input
@@ -84,6 +96,27 @@ function makeListDraggable(target) {
             }
         });
     }
+    // initialize the variable holding the order of the animation queue
+    //animationQueue.order = getQueueOrder();
+}
+
+// get order of animation queue
+function getQueueOrder() {
+    var list = document.getElementById("sortlist");
+    var items = list.getElementsByTagName("li");
+    var animationOrder = new Array();
+    for (let i of items) {
+        var clazz = i.childNodes[0].className;
+        animationOrder.push(clazz);
+    }
+    return animationOrder;
+}
+
+
+// send an order of animations to update the server
+function sendQueueOrder() {
+    var order = { "order": getQueueOrder() };
+    post(order, "/order");
 }
 
 // inserts css into stylesheet
@@ -180,8 +213,8 @@ function generateHtmlListElement(name) {
 
 // makes a POST req to the server
 // Accepts json object containing hex color array for a new image formatted for use by the matrix
-function post(json) {
-    fetch("/data", {
+function post(json, path) {
+    fetch(path, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -201,6 +234,16 @@ async function getJsonData() {
     let response = await fetch(endpoint);
     jsonData = await response.json();
     return jsonData;
+}
+
+//fetches the list of animation order from the server
+async function getJsonOrder() {
+    console.log('Get request to pull image order from server');
+    let endpoint = document.URL + 'order';
+    let response = await fetch(endpoint);
+    jsonOrder = await response.json();
+    console.log(jsonOrder);
+    return jsonOrder;
 }
 
 
@@ -282,7 +325,7 @@ function uploadImage() {
     image = hexArrayToUpload(image);
     let validJson = getNewJson(getRandID(), 200, 12, image);
     console.log(validJson);
-    post(validJson);
+    post(validJson, "/data");
 }
 
 // converts an array to the serpentine pattern

@@ -5,6 +5,8 @@ const { readFileSync, writeFileSync } = require('fs');
 const path = require('path')
 const bodyParser = require('body-parser');
 
+const orderFilePath = __dirname + '/public/data/order.json';
+const dataFilePath = __dirname + '/public/data/data.json'
 
 // Use these files as static files (meaning send these to the user as-is to their browser)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -18,14 +20,13 @@ app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
 
-// when the user makes a get request to '/' (meaning http://{website}/ -- but in our case, http://localhost:3000/)
-// send them the file `FILENAME`
+// landing page
 app.get('/', (req, res) => {
   console.log('Handling GET request for "/". Sending index.html');
   res.sendFile(__dirname + '/index.html');
 });
 
-// try it with a different suffix! go to http://localhost:3000/ping
+// test get request, returns 'pong'
 app.get('/ping', (req, res) => {
   console.log('Handling GET request for "/ping"');
   res.json('pong');
@@ -36,6 +37,12 @@ app.get('/data', (req, res) => {
   console.log('Handling GET request for "/data"');
   res.json(getJsonData());
 });
+
+// GET request for order of animations
+app.get('/order', (req, res) => {
+  console.log('Handling get request for order of animations');
+  res.json(readFromFile(orderFilePath));
+})
 
 // receives image data from the server and inserts it into the data file
 app.post('/data', (req, res) => {
@@ -67,7 +74,8 @@ app.post('/data', (req, res) => {
 
   // write data to animation-data file
   try {
-    writeToFile(__dirname + '/public/data/data.json', JSON.stringify(jsonFromFile));
+    animationJsonCache = jsonFromFile;
+    writeToFile(dataFilePath, JSON.stringify(jsonFromFile));
   } catch (err) {
     res.sendStatus(501).end('Data verified but could not insert');
   }
@@ -75,10 +83,17 @@ app.post('/data', (req, res) => {
 
 });
 
+app.post('/order', (req, res) => {
+  var data = req.body;
+  console.log(data);
+  console.log(data.order.length);
+  writeToFile(orderFilePath, JSON.stringify(data));
+});
+
 // update jsonData variable from file
 function getJsonData() {
   console.log('Reading from data.json file');
-  return JSON.parse(readFileSync(__dirname + '/public/data/data.json', 'utf8'));
+  return readFromFile(dataFilePath);
 }
 
 // write to file
@@ -89,6 +104,10 @@ function writeToFile(file, data) {
     // success case, the file was saved
     console.log('File overwritten: ' + file);
   });
+}
+
+function readFromFile(file) {
+  return JSON.parse(readFileSync(file, 'utf8'));
 }
 
 // verify that given input is correct format to be inserted into data json
