@@ -8,6 +8,9 @@ const bodyParser = require('body-parser');
 const orderFilePath = __dirname + '/public/data/order.json';
 const dataFilePath = __dirname + '/public/data/data.json'
 
+let animationCache = readFromFile(dataFilePath);
+let orderCache = readFromFile(orderFilePath);
+
 // Use these files as static files (meaning send these to the user as-is to their browser)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json()); // support json encoded bodies
@@ -35,13 +38,13 @@ app.get('/ping', (req, res) => {
 // GET request for the animation-data json
 app.get('/data', (req, res) => {
   console.log('Handling GET request for "/data"');
-  res.json(getJsonData());
+  res.json(animationCache);
 });
 
 // GET request for order of animations
 app.get('/order', (req, res) => {
-  console.log('Handling get request for order of animations');
-  res.json(readFromFile(orderFilePath));
+  console.log('Handling GET request for "/order"');
+  res.json(orderCache);
 })
 
 // receives image data from the server and inserts it into the data file
@@ -62,20 +65,21 @@ app.post('/data', (req, res) => {
   console.log('Repeat count: ' + newjson.repeatCount);
   console.log('Frame count: ' + newjson.frames.length);
 
-  // retrieve animation json from file
-  var jsonFromFile = getJsonData();
+  console.log("ORDERCACHE: "+ orderCache.order);
+  orderCache.order.unshift(newjson.name);
+  writeToFile(orderFilePath, JSON.stringify(orderCache));
+  console.log("ORDERCACHE: "+ orderCache.order);
 
   //for (let i = 0; i < newjson.length; i++) {
-  var originalLength = jsonFromFile.animationList.length;
-  jsonFromFile.animationList.push(newjson);
-  var newLength = jsonFromFile.animationList.length;
+  var originalLength = animationCache.animationList.length;
+  animationCache.animationList.push(newjson);
+  var newLength = animationCache.animationList.length;
   console.log('Animation count went from length ' + originalLength + ' to ' + newLength);
   //}
 
   // write data to animation-data file
   try {
-    animationJsonCache = jsonFromFile;
-    writeToFile(dataFilePath, JSON.stringify(jsonFromFile));
+    writeToFile(dataFilePath, JSON.stringify(animationCache));
   } catch (err) {
     res.sendStatus(501).end('Data verified but could not insert');
   }
@@ -85,16 +89,9 @@ app.post('/data', (req, res) => {
 
 app.post('/order', (req, res) => {
   var data = req.body;
-  console.log(data);
-  console.log(data.order.length);
+  orderCache.order = data;
   writeToFile(orderFilePath, JSON.stringify(data));
 });
-
-// update jsonData variable from file
-function getJsonData() {
-  console.log('Reading from data.json file');
-  return readFromFile(dataFilePath);
-}
 
 // write to file
 function writeToFile(file, data) {
