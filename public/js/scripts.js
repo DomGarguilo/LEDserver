@@ -213,17 +213,26 @@ function generateHtmlListElement(name) {
 
 // makes a POST req to the server
 // Accepts json object containing hex color array for a new image formatted for use by the matrix
-function post(json, path) {
-    fetch(path, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(json)
-    }).then((response) => {
-        // make this print correctly. maybe async or something
-        console.log("POST request complete! response:", response);
-    });
+async function post(data, path) {
+    try {
+        const config = {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }
+        const response = await fetch(path, config);
+        console.log("POSTRRR " + response);
+        if (response.ok) {
+            // maybe maybe this a callback to refresh
+            return await response;
+        } else {
+            //
+        }
+    } catch (error) {
+        return error;
+    }
 }
 
 // fetches the image data json from server
@@ -325,7 +334,18 @@ function uploadImage() {
     image = hexArrayToUpload(image);
     let validJson = getNewJson(getRandID(), 200, 12, image);
     console.log(validJson);
-    post(validJson, "/data");
+    post(validJson, "/data")
+        .then(data => {
+            // enter you logic when the fetch is successful
+            console.log(data.type);
+            // this crashes the app
+            window.location.reload();
+        })
+        .catch(error => {
+            // enter your logic for when there is an error (ex. error toast)
+            console.log(error)
+        })
+
 }
 
 // converts an array to the serpentine pattern
