@@ -4,12 +4,18 @@ const port = process.env.PORT || 3000;
 const { readFileSync, writeFileSync } = require('fs');
 const path = require('path')
 const bodyParser = require('body-parser');
+const cors = require('cors')
 
 const orderFilePath = __dirname + '/public/data/order.json';
 const dataFilePath = __dirname + '/public/data/data.json'
 
 let animationCache = readFromFile(dataFilePath);
 let orderCache = readFromFile(orderFilePath);
+
+
+
+
+app.use(cors())
 
 // Use these files as static files (meaning send these to the user as-is to their browser)
 app.use(express.static(path.join(__dirname, 'public')));

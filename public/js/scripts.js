@@ -1,38 +1,42 @@
 // main function to display the image previews on the page
-function createAnimationList(callback) {
+async function createAnimationList(callback) {
+    list = document.getElementById("sortlist");
+    while (list && list.firstChild) {
+        console.log("HERE" + list.firstChild);
+        list.removeChild(list.lastChild);
+    }
     // get image data from server
     let order;
-    getJsonOrder().then((v) => {
-        order = v.order;
-        console.log('Animation order: ' + v.order);
-    }).then(getJsonData().then((v) => {
-        let animationCount = v.animationList.length;
-        if (order.length != animationCount) {
-            console.warn('missmatch in length of animations and animation order ' + order.length + ' vs. ' + animationCount);
-        }
-        // loop through animation order to create ordered html tags
-        for (let i = 0; i < order.length; i++) {
-            let name = order[i];
-            // get html tag to refference the animation
-            let html = generateHtmlListElement(name);
-            addHtml(html);
-        }
-        // loop through the rest of the animation data to create the animations
-        for (let i = 0; i < animationCount; i++) {
-            // get css header for each animation
-            let data = v.animationList[i];
-            // get css formatted color array
-            let cssArray = generateFrameSet(10, data);
-            // get css rules to cycle through frames in animation
-            let cssDetails = generateCssDetails(data.name, 2);
+    let v = await getJsonOrder();
+    order = v.order;
+    console.log('Animation order: ' + v.order);
+    v = await getJsonData();
+    let animationCount = v.animationList.length;
+    if (order.length != animationCount) {
+        console.warn('missmatch in length of animations and animation order ' + order.length + ' vs. ' + animationCount);
+    }
+    // loop through animation order to create ordered html tags
+    for (let i = 0; i < order.length; i++) {
+        let name = order[i];
+        // get html tag to refference the animation
+        let html = generateHtmlListElement(name);
+        addHtml(html);
+    }
+    // loop through the rest of the animation data to create the animations
+    for (let i = 0; i < animationCount; i++) {
+        // get css header for each animation
+        let data = v.animationList[i];
+        // get css formatted color array
+        let cssArray = generateFrameSet(10, data);
+        // get css rules to cycle through frames in animation
+        let cssDetails = generateCssDetails(data.name, 2);
 
-            // add the various parts to the page
-            addCss(cssArray);
-            addCss(cssDetails);
-        }
-        console.log('Finished creating list of animations. Now calling slist()');
-        callback(arguments[1]);
-    }));
+        // add the various parts to the page
+        addCss(cssArray);
+        addCss(cssDetails);
+    }
+    console.log('Finished creating list of animations. Now calling slist()');
+    callback(arguments[1]);
 }
 
 // makes list draggable. takes the lists' id as input
@@ -329,23 +333,18 @@ function imagePreview(event) {
     reader.readAsDataURL(event.target.files[0]);
 }
 
-function uploadImage() {
+async function uploadImage() {
     let image = imageToHexArray();
     image = hexArrayToUpload(image);
     let validJson = getNewJson(getRandID(), 200, 12, image);
     console.log(validJson);
-    post(validJson, "/data")
-        .then(data => {
-            // enter you logic when the fetch is successful
-            console.log(data.type);
-            // this crashes the app
-            window.location.reload();
-        })
-        .catch(error => {
-            // enter your logic for when there is an error (ex. error toast)
-            console.log(error)
-        })
+    let data = await post(validJson, "/data")
 
+    // enter you logic when the fetch is successful
+    console.log(data.type);
+    // this crashes the app
+    //window.location.reload(true);
+    await createAnimationList(makeListDraggable, "sortList");
 }
 
 // converts an array to the serpentine pattern
