@@ -12,9 +12,6 @@ const dataFilePath = __dirname + '/public/data/data.json'
 let animationCache = readFromFile(dataFilePath);
 let orderCache = readFromFile(orderFilePath);
 
-
-
-
 app.use(cors())
 
 // Use these files as static files (meaning send these to the user as-is to their browser)
