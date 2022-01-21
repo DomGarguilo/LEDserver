@@ -4,7 +4,15 @@ const port = process.env.PORT || 3000;
 const { readFileSync, writeFileSync } = require('fs');
 const path = require('path')
 const bodyParser = require('body-parser');
+const cors = require('cors')
 
+const orderFilePath = __dirname + '/public/data/order.json';
+const dataFilePath = __dirname + '/public/data/data.json'
+
+let animationCache = readFromFile(dataFilePath);
+let orderCache = readFromFile(orderFilePath);
+
+app.use(cors())
 
 // Use these files as static files (meaning send these to the user as-is to their browser)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -18,14 +26,13 @@ app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
 
-// when the user makes a get request to '/' (meaning http://{website}/ -- but in our case, http://localhost:3000/)
-// send them the file `FILENAME`
+// landing page
 app.get('/', (req, res) => {
   console.log('Handling GET request for "/". Sending index.html');
   res.sendFile(__dirname + '/index.html');
 });
 
-// try it with a different suffix! go to http://localhost:3000/ping
+// test get request, returns 'pong'
 app.get('/ping', (req, res) => {
   console.log('Handling GET request for "/ping"');
   res.json('pong');
@@ -34,8 +41,14 @@ app.get('/ping', (req, res) => {
 // GET request for the animation-data json
 app.get('/data', (req, res) => {
   console.log('Handling GET request for "/data"');
-  res.json(getJsonData());
+  res.json(animationCache);
 });
+
+// GET request for order of animations
+app.get('/order', (req, res) => {
+  console.log('Handling GET request for "/order"');
+  res.json(orderCache);
+})
 
 // receives image data from the server and inserts it into the data file
 app.post('/data', (req, res) => {
@@ -55,19 +68,21 @@ app.post('/data', (req, res) => {
   console.log('Repeat count: ' + newjson.repeatCount);
   console.log('Frame count: ' + newjson.frames.length);
 
-  // retrieve animation json from file
-  var jsonFromFile = getJsonData();
+  console.log("ORDERCACHE: "+ orderCache.order);
+  orderCache.order.unshift(newjson.name);
+  writeToFile(orderFilePath, JSON.stringify(orderCache));
+  console.log("ORDERCACHE: "+ orderCache.order);
 
   //for (let i = 0; i < newjson.length; i++) {
-  var originalLength = jsonFromFile.animationList.length;
-  jsonFromFile.animationList.push(newjson);
-  var newLength = jsonFromFile.animationList.length;
+  var originalLength = animationCache.animationList.length;
+  animationCache.animationList.push(newjson);
+  var newLength = animationCache.animationList.length;
   console.log('Animation count went from length ' + originalLength + ' to ' + newLength);
   //}
 
   // write data to animation-data file
   try {
-    writeToFile(__dirname + '/public/data/data.json', JSON.stringify(jsonFromFile));
+    writeToFile(dataFilePath, JSON.stringify(animationCache));
   } catch (err) {
     res.sendStatus(501).end('Data verified but could not insert');
   }
@@ -75,11 +90,11 @@ app.post('/data', (req, res) => {
 
 });
 
-// update jsonData variable from file
-function getJsonData() {
-  console.log('Reading from data.json file');
-  return JSON.parse(readFileSync(__dirname + '/public/data/data.json', 'utf8'));
-}
+app.post('/order', (req, res) => {
+  var data = req.body;
+  orderCache.order = data;
+  writeToFile(orderFilePath, JSON.stringify(data));
+});
 
 // write to file
 function writeToFile(file, data) {
@@ -91,19 +106,23 @@ function writeToFile(file, data) {
   });
 }
 
+function readFromFile(file) {
+  return JSON.parse(readFileSync(file, 'utf8'));
+}
+
 // verify that given input is correct format to be inserted into data json
 // returns an error if incorrect or null if it is correct
 function verifyAnimationJson(input) {
   try {
-    assert(input != null && input != undefined, 'given var is null');
-    assert(input.name != undefined, 'name is undefined');
-    assert(input.frameDuration != undefined, 'frame duration is undefined');
-    assert(input.repeatCount != undefined, 'repeat count is undefined');
-    assert(input.frames != undefined, 'frame list is undefined');
+    assertThat(input != null && input != undefined, 'given var is null');
+    assertThat(input.name != undefined, 'name is undefined');
+    assertThat(input.frameDuration != undefined, 'frame duration is undefined');
+    assertThat(input.repeatCount != undefined, 'repeat count is undefined');
+    assertThat(input.frames != undefined, 'frame list is undefined');
     var frameListLength = input.frames.length;
-    assert(frameListLength > 0, 'frame list has no entries');
+    assertThat(frameListLength > 0, 'frame list has no entries');
     for (let i = 0; i < frameListLength; i++) {
-      assert(input.frames[i].length == 256, i + 'th entry length in color array frame list != 256');
+      assertThat(input.frames[i].length == 256, i + 'th entry length in color array frame list != 256');
     }
     return null;
   } catch (err) {
@@ -112,7 +131,7 @@ function verifyAnimationJson(input) {
 }
 
 // testing
-function assert(condition, message) {
+function assertThat(condition, message) {
   if (!condition) {
     throw new Error(message || 'Assertion failed');
   }
