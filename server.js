@@ -114,15 +114,15 @@ function readFromFile(file) {
 // returns an error if incorrect or null if it is correct
 function verifyAnimationJson(input) {
   try {
-    assert(input != null && input != undefined, 'given var is null');
-    assert(input.name != undefined, 'name is undefined');
-    assert(input.frameDuration != undefined, 'frame duration is undefined');
-    assert(input.repeatCount != undefined, 'repeat count is undefined');
-    assert(input.frames != undefined, 'frame list is undefined');
+    assertThat(input != null && input != undefined, 'given var is null');
+    assertThat(input.name != undefined, 'name is undefined');
+    assertThat(input.frameDuration != undefined, 'frame duration is undefined');
+    assertThat(input.repeatCount != undefined, 'repeat count is undefined');
+    assertThat(input.frames != undefined, 'frame list is undefined');
     var frameListLength = input.frames.length;
-    assert(frameListLength > 0, 'frame list has no entries');
+    assertThat(frameListLength > 0, 'frame list has no entries');
     for (let i = 0; i < frameListLength; i++) {
-      assert(input.frames[i].length == 256, i + 'th entry length in color array frame list != 256');
+      assertThat(input.frames[i].length == 256, i + 'th entry length in color array frame list != 256');
     }
     return null;
   } catch (err) {
@@ -131,7 +131,7 @@ function verifyAnimationJson(input) {
 }
 
 // testing
-function assert(condition, message) {
+function assertThat(condition, message) {
   if (!condition) {
     throw new Error(message || 'Assertion failed');
   }

@@ -1,41 +1,31 @@
 // main function to display the image previews on the page
 async function createAnimationList(callback) {
-    list = document.getElementById("sortlist");
-    while (list && list.firstChild) {
-        console.log("HERE" + list.firstChild);
-        list.removeChild(list.lastChild);
-    }
-    // get image data from server
-    let order;
-    let v = await getJsonOrder();
-    order = v.order;
-    console.log('Animation order: ' + v.order);
-    v = await getJsonData();
-    let animationCount = v.animationList.length;
-    if (order.length != animationCount) {
-        console.warn('missmatch in length of animations and animation order ' + order.length + ' vs. ' + animationCount);
-    }
-    // loop through animation order to create ordered html tags
-    for (let i = 0; i < order.length; i++) {
-        let name = order[i];
-        // get html tag to refference the animation
-        let html = generateHtmlListElement(name);
-        addHtml(html);
-    }
-    // loop through the rest of the animation data to create the animations
-    for (let i = 0; i < animationCount; i++) {
-        // get css header for each animation
-        let data = v.animationList[i];
-        // get css formatted color array
-        let cssArray = generateFrameSet(10, data);
-        // get css rules to cycle through frames in animation
-        let cssDetails = generateCssDetails(data.name, 2);
 
-        // add the various parts to the page
-        addCss(cssArray);
-        addCss(cssDetails);
+    const rawOrderJson = await getJsonOrder();
+    const animationOrderArray = rawOrderJson.order; // array defining the order of animations
+
+    const rawDataJson = await getJsonData();
+    const animationArray = rawDataJson.animationList; // array defining animation image data
+
+    assertThat(animationOrderArray.length === animationArray.length, 'Order array and animation array should be the same length');
+
+    // create ordered list of html tags for animations and insert them into the html list
+    for (const animationID of animationOrderArray) {
+        // get html tag to refference the animation
+        const html = generateHtmlListElement(animationID);
+        insertHTML(html);
     }
-    console.log('Finished creating list of animations. Now calling slist()');
+
+    // loop through the rest of the animation data to create the animations
+    for (const data of animationArray) {
+        const pixelSize = 10;
+        const cssArray = generateCSSFrameSet(pixelSize, data);
+        const cssDetails = generateCSSDetails(data.name);
+
+        insertCss(cssArray);
+        insertCss(cssDetails);
+    }
+    console.log('Finished creating list of animations. Now calling makeListDraggable()');
     callback(arguments[1]);
 }
 
@@ -100,12 +90,10 @@ function makeListDraggable(target) {
             }
         });
     }
-    // initialize the variable holding the order of the animation queue
-    //animationQueue.order = getQueueOrder();
 }
 
 // get order of animation queue
-function getQueueOrder() {
+function getCurrentAnimationOrder() {
     var list = document.getElementById("sortlist");
     var items = list.getElementsByTagName("li");
     var animationOrder = new Array();
@@ -119,12 +107,12 @@ function getQueueOrder() {
 
 // send an order of animations to update the server
 function sendQueueOrder() {
-    var order = { "order": getQueueOrder() };
+    var order = { "order": getCurrentAnimationOrder() };
     post(order, "/order");
 }
 
 // inserts css into stylesheet
-function addCss(cssCode) {
+function insertCss(cssCode) {
     // creates the HTMLStyleElement
     let styleElement = document.createElement("style");
     // I think this checks if theres a stylesheet and creates one if not exists
@@ -138,7 +126,7 @@ function addCss(cssCode) {
 }
 
 // inserts html into list
-function addHtml(htmlToInsert) {
+function insertHTML(htmlToInsert) {
     let list = document.getElementById("sortlist");
     list.appendChild(htmlToInsert);
 }
@@ -162,10 +150,10 @@ function generateFrame(pixelSize, frameRange, data) {
 }
 
 // wraps the set of color arrays with additional CSS for displaying them as animation
-function generateFrameSet(pixelSize, data) {
-    let rangeList = getRange(data.frames.length);
+function generateCSSFrameSet(pixelSize, data) {
+    const rangeList = getCSSAnimationTimings(data.frames.length);
+    const frameList = data.frames;
     let result = '@keyframes ' + data.name + ' {';
-    let frameList = data.frames;
     for (let i = 0; i < frameList.length; i++) {
         result = result + generateFrame(pixelSize, rangeList[i], reverseEveryOtherCol(get2Darray(frameList[i])));
     }
@@ -175,7 +163,7 @@ function generateFrameSet(pixelSize, data) {
 
 // takes a number and returns a corresponding range of percents needed for CSS animation details
 // e.g. getRange(3) = {"0%, 33.3%","33.4%, 66.6%", "66.7%, 100%"}
-function getRange(num) {
+function getCSSAnimationTimings(num) {
     let result = new Array(num);
     let increment = Number(100 / num);
     for (let i = 0; i < result.length; i++) {
@@ -194,16 +182,15 @@ function getRange(num) {
 
 // returns the css animation rules
 // tells it how big and how fast to display frames and such
-function generateCssDetails(name, seconds) {
-    let result = '.' + name + ` {
+function generateCSSDetails(name) {
+    return '.' + name + ` {
         display: block;
         margin-bottom: 170px;
-        animation: `+ name + ` 2s infinite;
-        -webkit-animation: `+ name + ` 2s infinite;
-        -moz-animation: `+ name + ` 2s infinite;
-        -o-animation: `+ name + ` 2s infinite;
+        animation: ` + name + ` 2s infinite;
+        -webkit-animation: ` + name + ` 2s infinite;
+        -moz-animation: ` + name + ` 2s infinite;
+        -o-animation: ` + name + ` 2s infinite;
     }`
-    return result;
 }
 
 // return an html list element containing the div for an animation
@@ -232,7 +219,7 @@ async function post(data, path) {
             // maybe maybe this a callback to refresh
             return await response;
         } else {
-            //
+            console.error("error in response, status not OK");
         }
     } catch (error) {
         return error;
@@ -242,20 +229,19 @@ async function post(data, path) {
 // fetches the image data json from server
 // comes in array of hex color vals so other functions convert it to css-acceptable code
 async function getJsonData() {
+    const endpoint = document.URL + 'data';
+    const response = await fetch(endpoint);
+    const jsonData = await response.json();
     console.log('Get request to pull image data made');
-    let endpoint = document.URL + 'data';
-    let response = await fetch(endpoint);
-    jsonData = await response.json();
     return jsonData;
 }
 
 //fetches the list of animation order from the server
 async function getJsonOrder() {
-    console.log('Get request to pull image order from server');
-    let endpoint = document.URL + 'order';
-    let response = await fetch(endpoint);
-    jsonOrder = await response.json();
-    console.log(jsonOrder);
+    const endpoint = document.URL + 'order';
+    const response = await fetch(endpoint);
+    const jsonOrder = await response.json();
+    console.log('Get request to pull image order from server. Response: ' + jsonOrder.order);
     return jsonOrder;
 }
 
@@ -269,7 +255,6 @@ function get2Darray(arr) {
             result[i][j] = arr[(j * 16) + i];
         }
     }
-    // reverse every other line in array (needed for image display)
     return result;
 }
 
@@ -289,6 +274,7 @@ function reverseEveryOtherCol(matrix) {
 }
 
 // reverse every other row in a 2D array
+// NOT CURRENT USED
 function reverseEveryOtherRow(arr) {
     let result = Array.from(Array(16), () => new Array());
     for (let i = 0; i < arr.length; i++) {
@@ -338,13 +324,7 @@ async function uploadImage() {
     image = hexArrayToUpload(image);
     let validJson = getNewJson(getRandID(), 200, 12, image);
     console.log(validJson);
-    let data = await post(validJson, "/data")
-
-    // enter you logic when the fetch is successful
-    console.log(data.type);
-    // this crashes the app
-    //window.location.reload(true);
-    await createAnimationList(makeListDraggable, "sortList");
+    await post(validJson, "/data")
 }
 
 // converts an array to the serpentine pattern
@@ -362,7 +342,7 @@ function hexArrayToUpload(arr) {
             }
         }
     }
-    assert(result.length == 256, "wrong size in hex2upload " + result.length);
+    assertThat(result.length === 256, "wrong size in hex2upload " + result.length);
     return result;
 }
 
@@ -373,7 +353,7 @@ function imageToHexArray() {
     var context = canvas.getContext('2d');
     const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
-    assert((data.length / 4) === 256, "Unexpected data size in uploadImage");
+    assertThat((data.length / 4) === 256, "Unexpected data size in uploadImage");
     var result = new Array(0);
     for (let i = 0; i < data.length; i += 4) {
         const red = data[i];
@@ -382,7 +362,7 @@ function imageToHexArray() {
         // const alpha = data[i + 3]; ignore alpha value
         result.push(rgbToHex(red, green, blue));
     }
-    assert(result.length === 256, "Unexpected array size in uploadImage");
+    assertThat(result.length === 256, "Unexpected array size in uploadImage");
     return result;
 }
 
@@ -399,7 +379,7 @@ function rgbToHex(r, g, b) {
 
 // assert the provided statement is true
 // if false, log the message
-function assert(condition, message) {
+function assertThat(condition, message) {
     if (!condition) {
         throw new Error(message || "Assertion failed");
     }
@@ -419,7 +399,8 @@ function getNewJson(name, frameDuration, repeatCount, frames) {
 // generates a unique name for inserted image
 function getRandID() {
     let result = 'ID';
-    for (let i = 0; i < 10; i++) {
+    const idLength = 10;
+    for (let i = 0; i < idLength; i++) {
         let tempInt = Math.floor((Math.random() * 26) + 65);
         let tempChar = String.fromCharCode(tempInt);
         result += tempChar;
