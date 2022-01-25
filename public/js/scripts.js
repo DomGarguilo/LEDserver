@@ -1,3 +1,6 @@
+const IMAGE_PIXEL_LENGTH = 16;
+const PIXEL_COUNT_PER_IMAGE = 256;
+
 // main function to display the image previews on the page
 async function createAnimationList(callback) {
 
@@ -134,10 +137,10 @@ function insertHTML(htmlToInsert) {
 // generates the css color array for a single frame of animation
 function generateFrame(pixelSize, frameRange, data) {
     let result = frameRange + ' {box-shadow:';
-    for (let i = 1; i <= 16; i++) {
-        for (let j = 1; j <= 16; j++) {
+    for (let i = 1; i <= IMAGE_PIXEL_LENGTH; i++) {
+        for (let j = 1; j <= IMAGE_PIXEL_LENGTH; j++) {
             result += (pixelSize * i).toString() + 'px ' + (pixelSize * j).toString() + 'px 0 0 #' + data[i - 1][j - 1];
-            if (j == 16 && i == 16) {
+            if (j == IMAGE_PIXEL_LENGTH && i == IMAGE_PIXEL_LENGTH) {
                 result += ';';
             } else {
                 result += ',';
@@ -249,10 +252,10 @@ async function getJsonOrder() {
 // converts a 1D array to a 2D array
 // hardcoded 256 1D array -> 16x16 2D array
 function get2Darray(arr) {
-    let result = Array.from(Array(16), () => new Array(16));
-    for (let i = 0; i < 16; i++) {
-        for (let j = 0; j < 16; j++) {
-            result[i][j] = arr[(j * 16) + i];
+    let result = Array.from(Array(IMAGE_PIXEL_LENGTH), () => new Array(IMAGE_PIXEL_LENGTH));
+    for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
+        for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
+            result[i][j] = arr[(j * IMAGE_PIXEL_LENGTH) + i];
         }
     }
     return result;
@@ -276,7 +279,7 @@ function reverseEveryOtherCol(matrix) {
 // reverse every other row in a 2D array
 // NOT CURRENT USED
 function reverseEveryOtherRow(arr) {
-    let result = Array.from(Array(16), () => new Array());
+    let result = Array.from(Array(IMAGE_PIXEL_LENGTH), () => new Array());
     for (let i = 0; i < arr.length; i++) {
         if (i % 2 == 0) {
             for (let j = 0; j < arr[i].length; j++) {
@@ -331,18 +334,18 @@ async function uploadImage() {
 // i.e. every other row of image reversed
 function hexArrayToUpload(arr) {
     let result = new Array();
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
         if (i % 2 == 0) {
-            for (let j = 0; j < 16; j++) {
-                result.push(arr[(i * 16) + j]);
+            for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
+                result.push(arr[(i * IMAGE_PIXEL_LENGTH) + j]);
             }
         } else {
-            for (let j = 15; j >= 0; j--) {
-                result.push(arr[(i * 16) + j]);
+            for (let j = IMAGE_PIXEL_LENGTH - 1; j >= 0; j--) {
+                result.push(arr[(i * IMAGE_PIXEL_LENGTH) + j]);
             }
         }
     }
-    assertThat(result.length === 256, "wrong size in hex2upload " + result.length);
+    assertThat(result.length === PIXEL_COUNT_PER_IMAGE, "wrong size in hex2upload " + result.length);
     return result;
 }
 
@@ -353,7 +356,7 @@ function imageToHexArray() {
     var context = canvas.getContext('2d');
     const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
-    assertThat((data.length / 4) === 256, "Unexpected data size in uploadImage");
+    assertThat((data.length / 4) === PIXEL_COUNT_PER_IMAGE, "Unexpected data size in uploadImage");
     var result = new Array(0);
     for (let i = 0; i < data.length; i += 4) {
         const red = data[i];
@@ -362,7 +365,7 @@ function imageToHexArray() {
         // const alpha = data[i + 3]; ignore alpha value
         result.push(rgbToHex(red, green, blue));
     }
-    assertThat(result.length === 256, "Unexpected array size in uploadImage");
+    assertThat(result.length === PIXEL_COUNT_PER_IMAGE, "Unexpected array size in uploadImage");
     return result;
 }
 
