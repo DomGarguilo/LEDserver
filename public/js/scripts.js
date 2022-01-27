@@ -323,11 +323,15 @@ function imagePreview(event) {
 }
 
 async function uploadImage() {
+    // scrape image from the preview canvas
     let image = imageToHexArray();
     image = hexArrayToUpload(image);
+    // put image data into the animation json
     let validJson = getNewJson(getRandID(), 200, 12, image);
     console.log(validJson);
-    await post(validJson, "/data")
+    // post to server then refresh the page, drawing the updated data from server
+    await post(validJson, "/data");
+    window.location.reload();
 }
 
 // converts an array to the serpentine pattern
