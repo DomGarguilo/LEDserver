@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { Reorder, getItemStyle, getQuestionListStyle } from "./utils";
+import { Reorder, getItemStyle, getQuestionListStyle } from "../utils";
 import FrameList from "./FrameList";
 
 // fake data generator
@@ -8,10 +8,12 @@ const getQuestions = (count) =>
     Array.from({ length: count }, (v, k) => k).map((k) => ({
         id: `question-${k}`,
         content: `question ${k}`,
-        answers: [`answer-1`, `answer-2`, `answer-3`]
+        //<Frame path={"./one.jpg"} />
+        //want to make this a list of frames
+        frames: [`frame-1`, `frame-2`, `frame-3`]
     }));
 
-class Questions extends Component {
+class AnimationContainer extends Component {
     constructor(props) {
         super(props);
 
@@ -42,15 +44,15 @@ class Questions extends Component {
                 questions
             });
         } else {
-            const answers = Reorder(
-                this.state.questions[parseInt(result.type, 10)].answers,
+            const frames = Reorder(
+                this.state.questions[parseInt(result.type, 10)].frames,
                 result.source.index,
                 result.destination.index
             );
 
             const questions = JSON.parse(JSON.stringify(this.state.questions));
 
-            questions[result.type].answers = answers;
+            questions[result.type].frames = frames;
 
             this.setState({
                 questions
@@ -74,6 +76,7 @@ class Questions extends Component {
                                         <span {...provided.dragHandleProps}>
                                             <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
                                                 {question.content}
+                                                <h3>Animation preview can go here but needs styling to push it to the left of the frames box</h3>
 
                                                 <FrameList questionNum={index} question={question} />
                                             </div>
@@ -90,4 +93,4 @@ class Questions extends Component {
     }
 }
 
-export default Questions;
+export default AnimationContainer;

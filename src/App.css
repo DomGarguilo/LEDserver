@@ -3,14 +3,6 @@
   outline: 5px dotted blue;
 }
 
-.App-header {
-  background-color: #282c34;
-  align-items: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-  outline: 5px dashed green;
-}
-
 .Animation-queue {
   outline: 5px dotted green;
 }

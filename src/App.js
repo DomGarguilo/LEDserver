@@ -1,9 +1,10 @@
 import React from 'react';
-import Header from './Header';
-import AnimationContainer from './AnimationContainer';
+import Header from './components/Header';
+import AnimationContainer from './components/AnimationContainer';
 
 import './App.css';
 
+/*
 const contacts = [
   { id: 1, name: "Leanne Graham" },
   { id: 2, name: "Ervin Howell" },
@@ -21,6 +22,7 @@ const listItems = [
   "Home Projects",
   "Family"
 ];
+*/
 
 function App() {
   return (

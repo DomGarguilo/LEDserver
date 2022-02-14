@@ -33,6 +33,21 @@ export const getQuestionListStyle = (isDraggingOver) => ({
 export const getAnswerListStyle = (isDraggingOver) => ({
     background: isDraggingOver ? "lightblue" : "lightgrey",
     padding: 4,
+    height: 180,
+    display: "flex"
+});
+
+export const getFrameStyle = () => ({
+    width: 100,
     height: 100,
     display: "flex"
-});  
+});
+
+export const getHeaderStyle = () => ({
+    height: 100,
+    backgroundColor: "black",
+    itemsAlign: "center",
+    color: "white",
+    outline: "5px dashed green",
+    fontSize: "calc(10px + 4vmin)"
+})
