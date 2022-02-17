@@ -13,16 +13,29 @@ const getQuestions = (count) =>
         frames: [`frame-1`, `frame-2`, `frame-3`]
     }));
 
+async function getDataFromServer() {
+    const response = await fetch('http://localhost:3000/data');
+    const data = await response.json();
+    return data;
+}
+
 class AnimationContainer extends Component {
     constructor(props) {
         super(props);
 
-        console.log(getQuestions(3));
+        //console.log(getQuestions(3));
 
         this.state = {
-            questions: getQuestions(3)
+            questions: getQuestions(3),
+            animationList: []
         };
         this.onDragEnd = this.onDragEnd.bind(this);
+    }
+
+    async componentDidMount() {
+        const data = await getDataFromServer();
+        this.setState({ animationList: data.animationList });
+        console.log(this.state.animationList);
     }
 
     onDragEnd(result) {
