@@ -26,7 +26,6 @@ class AnimationContainer extends Component {
         //console.log(getQuestions(3));
 
         this.state = {
-            questions: getQuestions(3),
             animationList: []
         };
         this.onDragEnd = this.onDragEnd.bind(this);
@@ -47,28 +46,28 @@ class AnimationContainer extends Component {
 
         if (result.type === "QUESTIONS") {
             console.log(result);
-            const questions = Reorder(
-                this.state.questions,
+            const animationList = Reorder(
+                this.state.animationList,
                 result.source.index,
                 result.destination.index
             );
 
             this.setState({
-                questions
+                animationList
             });
         } else {
             const frames = Reorder(
-                this.state.questions[parseInt(result.type, 10)].frames,
+                this.state.animationList[parseInt(result.type, 10)].frames,
                 result.source.index,
                 result.destination.index
             );
 
-            const questions = JSON.parse(JSON.stringify(this.state.questions));
+            const animationList = JSON.parse(JSON.stringify(this.state.animationList));
 
-            questions[result.type].frames = frames;
+            animationList[result.type].frames = frames;
 
             this.setState({
-                questions
+                animationList
             });
         }
     }
@@ -82,13 +81,13 @@ class AnimationContainer extends Component {
                 <Droppable droppableId="droppable" type="QUESTIONS">
                     {(provided, snapshot) => (
                         <div ref={provided.innerRef} style={getQuestionListStyle(snapshot.isDraggingOver)} >
-                            {this.state.questions.map((question, index) => (
+                            {this.state.animationList.map((question, index) => (
 
-                                <Draggable key={question.id} draggableId={question.id} index={index} >
+                                <Draggable key={question.name} draggableId={question.name} index={index} >
                                     {(provided, snapshot) => (
                                         <span {...provided.dragHandleProps}>
                                             <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
-                                                {question.content}
+                                                {question.name}
                                                 <h3>Animation preview can go here but needs styling to push it to the left of the frames box</h3>
 
                                                 <FrameList questionNum={index} question={question} />

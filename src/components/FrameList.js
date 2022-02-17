@@ -14,8 +14,7 @@ const FrameList = (props) => {
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
                     <span {...provided.dragHandleProps}>
-                      <Frame />
-                      {answer}
+                      <Frame frames={answer} />
                     </span>
                   </div>
                 )}
