@@ -56,6 +56,7 @@ class AnimationContainer extends Component {
                 animationList
             });
         } else {
+            // TODO: something is wrong here where only the frames of the bottom most FrameList can be moved.s
             const frames = Reorder(
                 this.state.animationList[parseInt(result.type, 10)].frames,
                 result.source.index,
