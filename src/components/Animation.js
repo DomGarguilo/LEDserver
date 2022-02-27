@@ -7,6 +7,10 @@ const FRAME_PIXEL_COUNT = Math.pow(IMAGE_PIXEL_LENGTH, 2);
 const pixelSize = 10;
 
 class Animation extends Component {
+    // will need to fill in this method to check for when we should re-render
+    shouldComponentUpdate(nextProps, nextState) {
+        return false;
+    }
     render() {
         const { name, frameDuration, repeatCount, frames } = this.props.data;
         console.log('Creating animation '+ name);

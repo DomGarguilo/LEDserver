@@ -8,7 +8,7 @@ const pixelSize = 8;
 export default function Frame(props) {
     const frames1 = props.frames;
     const uniqueID = uuid();
-    console.log('creating Sytled Frame component: ' + uniqueID)
+    console.log('creating Sytled Frame component: ' + uniqueID);
 
     return (
         <Wrapper>
