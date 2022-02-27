@@ -31,10 +31,10 @@ class AnimationContainer extends Component {
     onDragEnd(result) {
         // dropped outside the list
         if (!result.destination) {
-            //console.log("no-change");
             return;
         }
 
+        // outer, animation + frame draggable part
         if (result.type === "QUESTIONS") {
             console.log(result);
             const animationList = Reorder(
@@ -47,16 +47,19 @@ class AnimationContainer extends Component {
                 animationList
             });
         } else {
+            console.log(result);
             // TODO: something is wrong here where only the frames of the bottom most FrameList can be moved.s
-            const frames = Reorder(
+            // I think theres a disconnect between the animationList in state and what we think it is
+            // looks like there should be a 2D array whose elements are lists of thier own each corresponding to the outer and inner draggables
+            const reorderedFrames = Reorder(
                 this.state.animationList[parseInt(result.type, 10)].frames,
                 result.source.index,
                 result.destination.index
             );
 
-            const animationList = JSON.parse(JSON.stringify(this.state.animationList));
+            const animationList = this.state.animationList;
 
-            animationList[result.type].frames = frames;
+            animationList[result.type].frames = reorderedFrames;
 
             this.setState({
                 animationList

@@ -11,6 +11,7 @@ class Animation extends Component {
     shouldComponentUpdate(nextProps, nextState) {
         return false;
     }
+    
     render() {
         const { name, frameDuration, repeatCount, frames } = this.props.data;
         console.log('Creating animation '+ name);
@@ -20,9 +21,9 @@ class Animation extends Component {
             </Wrapper>
         )
     }
-}
+};
 
-export default Animation
+export default Animation;
 
 const StyledFrame = styled.div`
 ${(props) => generateCSSDetails(props.name)}

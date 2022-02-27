@@ -58,3 +58,10 @@ export const assertTrue = (condition, message) => {
         throw new Error(message || "Assertion failed");
     }
 }
+
+export const arraysOrderAreEqual = (a, b) => {
+    if (!Array.isArray(a) || !Array.isArray(b))
+        throw new TypeError("Either one or both parameters is not an Array");
+
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+}
