@@ -7,7 +7,7 @@
   outline: 5px dotted green;
 }
 
-.dish {
+/* .dish {
   position: absolute;
   animation: x 2s infinite;
   -webkit-animation: x 2s infinite;
@@ -27,4 +27,9 @@
     height: 10px;
     width: 10px;
   }
+} */
+
+.binkers {
+  height: 40px;
+  width: 40px;
 }

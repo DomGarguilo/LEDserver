@@ -16,6 +16,7 @@ export const getItemStyle = (isDragging, draggableStyle) => {
         margin: `0 0 ${grid}px 0`,
         textAlign: "right",
         border: "solid",
+        display: "flex",
 
         // change background colour if dragging
         background: isDragging ? "lightgreen" : "grey",
@@ -50,4 +51,10 @@ export const getHeaderStyle = () => ({
     color: "white",
     outline: "5px dashed green",
     fontSize: "calc(10px + 4vmin)"
-})
+});
+
+export const assertTrue = (condition, message) => {
+    if (!condition) {
+        throw new Error(message || "Assertion failed");
+    }
+}

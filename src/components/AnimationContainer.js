@@ -2,16 +2,7 @@ import { Component } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Reorder, getItemStyle, getQuestionListStyle } from "../utils";
 import FrameList from "./FrameList";
-
-// fake data generator
-const getQuestions = (count) =>
-    Array.from({ length: count }, (v, k) => k).map((k) => ({
-        id: `question-${k}`,
-        content: `question ${k}`,
-        //<Frame path={"./one.jpg"} />
-        //want to make this a list of frames
-        frames: [`frame-1`, `frame-2`, `frame-3`]
-    }));
+import Animation from "./Animation";
 
 async function getDataFromServer() {
     const response = await fetch('http://localhost:3000/data');
@@ -34,7 +25,7 @@ class AnimationContainer extends Component {
     async componentDidMount() {
         const data = await getDataFromServer();
         this.setState({ animationList: data.animationList });
-        console.log(this.state.animationList);
+        //console.log(this.state.animationList);
     }
 
     onDragEnd(result) {
@@ -75,6 +66,7 @@ class AnimationContainer extends Component {
 
     // Normally you would want to split things out into separate components.
     // But in this example everything is just done in one place for simplicity
+    //<FrameList questionNum={index} question={question} />
     render() {
         return (
             <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
@@ -88,10 +80,9 @@ class AnimationContainer extends Component {
                                     {(provided, snapshot) => (
                                         <span {...provided.dragHandleProps}>
                                             <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
-                                                {question.name}
-                                                <h3>Animation preview can go here but needs styling to push it to the left of the frames box</h3>
-
+                                                <Animation data={question} />
                                                 <FrameList questionNum={index} question={question} />
+                                                ID: {question.name}
                                             </div>
                                         </span>
                                     )}

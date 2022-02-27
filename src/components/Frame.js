@@ -18,14 +18,14 @@ export default function Frame(props) {
 }
 
 const StyledFrame = styled.div`
-${(props) => generateCSSDetails(props.name)}
+${(props) => generateCSSDetails(pixelSize, props.name)}
 
 ${(props) => generateCSSFrameSet(pixelSize, props.frames, props.name)}
 `;
 
 const Wrapper = styled.section`
     width: 148px;
-    heigth: 10px;
+    height: 148px;
     background: papayawhip;
     overflow: hidden;
 `;
@@ -82,10 +82,10 @@ function generateFrame(pixelSize, frameRange, data) {
 
 // returns the css animation rules
 // tells it how big and how fast to display frames and such
-function generateCSSDetails(name) {
+function generateCSSDetails(pixelSize, name) {
     return `
         display: block;
-        margin-bottom: 170px;
+        margin-bottom: `+ (pixelSize * 16) + `px;
         animation: ` + name + ` 2s infinite;
         -webkit-animation: ` + name + ` 2s infinite;
         -moz-animation: ` + name + ` 2s infinite;
