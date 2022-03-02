@@ -70,7 +70,7 @@ class AnimationContainer extends Component {
                         <div ref={provided.innerRef} style={getQuestionListStyle(snapshot.isDraggingOver)} >
                             {this.state.animationList.map((question, index) => (
 
-                                <Draggable key={question.name} draggableId={question.name} index={index} >
+                                <Draggable key={question.name} draggableId={question.name} index={index} isDragDisabled={false}>
                                     {(provided, snapshot) => (
                                         <span {...provided.dragHandleProps}>
                                             <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >

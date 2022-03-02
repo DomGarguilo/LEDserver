@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import styled from 'styled-components';
-import { arraysOrderAreEqual } from 'utils';
+import { arraysOrderAreEqual, get2Darray, reverseEveryOtherCol, IMAGE_PIXEL_LENGTH } from 'utils';
 
-const IMAGE_PIXEL_LENGTH = 16;
 const pixelSize = 8;
 
 class Frame extends Component {
@@ -40,13 +39,10 @@ const Wrapper = styled.section`
 
 // wraps the set of color arrays with additional CSS for displaying them as animation
 function generateCSSFrameSet(pixelSize, frames) {
-    const frameList = []
-    frameList.push(frames);
-    let result = '';
-    for (let i = 0; i < frameList.length; i++) {
-        result = result + generateFrame(pixelSize, reverseEveryOtherCol(get2Darray(frameList[i])));
-    }
-    return result;
+    let framesCopy = frames;
+    framesCopy = get2Darray(framesCopy);
+    framesCopy = reverseEveryOtherCol(framesCopy);
+    return generateFrame(pixelSize, framesCopy);
 }
 
 // generates the css color array for a single frame of animation
@@ -74,33 +70,6 @@ function generateCSSDetails(pixelSize) {
         position: absolute;
         display: block;
         margin-bottom: `+ (pixelSize * 16) + `px;`
-}
-
-// converts a 1D array to a 2D array
-// hardcoded 256 length 1D array -> 16x16 2D array
-function get2Darray(arr) {
-    let result = Array.from(Array(IMAGE_PIXEL_LENGTH), () => new Array(IMAGE_PIXEL_LENGTH));
-    for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
-        for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
-            result[i][j] = arr[(j * IMAGE_PIXEL_LENGTH) + i];
-        }
-    }
-    return result;
-}
-
-// reverses every other row in a 2D array
-// thats how the physical LED matrix needs it
-function reverseEveryOtherCol(matrix) {
-    for (let col = 0; col < matrix[0].length; col++) {
-        if (col % 2 === 1) {
-            for (let row = 0; row < matrix.length / 2; row++) {
-                let temp = matrix[row][col];
-                matrix[row][col] = matrix[matrix.length - row - 1][col];
-                matrix[matrix.length - row - 1][col] = temp;
-            }
-        }
-    }
-    return matrix;
 }
 
 /* SAMPLE STYLED DIV FOR FRAME

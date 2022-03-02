@@ -1,9 +1,7 @@
 import React, { Component } from 'react'
 import styled from 'styled-components';
-import { assertTrue } from 'utils';
+import { assertTrue, get2Darray, reverseEveryOtherCol, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from 'utils';
 
-const IMAGE_PIXEL_LENGTH = 16;
-const FRAME_PIXEL_COUNT = Math.pow(IMAGE_PIXEL_LENGTH, 2);
 const pixelSize = 10;
 
 class Animation extends Component {
@@ -87,7 +85,7 @@ function generateFrame(pixelSize, frameRange, data) {
             }
         }
     }
-    result += 'height:' + pixelSize.toString() + 'px;width:' + pixelSize.toString() + 'px;}';
+    result += '\nheight:' + pixelSize.toString() + 'px;\nwidth:' + pixelSize.toString() + 'px;}';
     result = result.replaceAll('0x', '#');
     return result;
 }
@@ -103,34 +101,6 @@ function generateCSSDetails(name, frameDuration) {
         -moz-animation: ` + name + ` 2s infinite;
         -o-animation: ` + name + ` 2s infinite;
     `
-}
-
-
-// converts a 1D array to a 2D array
-// hardcoded 256 1D array -> 16x16 2D array
-function get2Darray(arr) {
-    let result = Array.from(Array(IMAGE_PIXEL_LENGTH), () => new Array(IMAGE_PIXEL_LENGTH));
-    for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
-        for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
-            result[i][j] = arr[(j * IMAGE_PIXEL_LENGTH) + i];
-        }
-    }
-    return result;
-}
-
-// reverses every other row in a 2D array
-// thats how the physical matrix needs it
-function reverseEveryOtherCol(matrix) {
-    for (let col = 0; col < matrix[0].length; col++) {
-        if (col % 2 === 1) {
-            for (let row = 0; row < matrix.length / 2; row++) {
-                let temp = matrix[row][col];
-                matrix[row][col] = matrix[matrix.length - row - 1][col];
-                matrix[matrix.length - row - 1][col] = temp;
-            }
-        }
-    }
-    return matrix;
 }
 
 // EXAMPLE WORKING SYLED FRAME
