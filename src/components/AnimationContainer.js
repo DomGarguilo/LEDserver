@@ -14,8 +14,6 @@ class AnimationContainer extends Component {
     constructor(props) {
         super(props);
 
-        //console.log(getQuestions(3));
-
         this.state = {
             animationList: []
         };
@@ -31,12 +29,12 @@ class AnimationContainer extends Component {
     onDragEnd(result) {
         // dropped outside the list
         if (!result.destination) {
+            console.log('NOT EQUALS');
             return;
         }
 
         // outer, animation + frame draggable part
         if (result.type === "QUESTIONS") {
-            console.log(result);
             const animationList = Reorder(
                 this.state.animationList,
                 result.source.index,
@@ -47,10 +45,6 @@ class AnimationContainer extends Component {
                 animationList
             });
         } else {
-            console.log(result);
-            // TODO: something is wrong here where only the frames of the bottom most FrameList can be moved.s
-            // I think theres a disconnect between the animationList in state and what we think it is
-            // looks like there should be a 2D array whose elements are lists of thier own each corresponding to the outer and inner draggables
             const reorderedFrames = Reorder(
                 this.state.animationList[parseInt(result.type, 10)].frames,
                 result.source.index,
@@ -67,9 +61,6 @@ class AnimationContainer extends Component {
         }
     }
 
-    // Normally you would want to split things out into separate components.
-    // But in this example everything is just done in one place for simplicity
-    //<FrameList questionNum={index} question={question} />
     render() {
         return (
             <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >

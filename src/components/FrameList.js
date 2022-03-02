@@ -5,18 +5,18 @@ import Frame from "./Frame";
 const FrameList = (props) => {
     const { question, questionNum } = props;
     return (
-        <Droppable droppableId={`droppable${question.id}`} type={`${questionNum}`} direction="horizontal">
+        <Droppable droppableId={`droppable${question.name}`} type={`${questionNum}`} direction="horizontal">
             {(provided, snapshot) => (
                 <div ref={provided.innerRef} style={getAnswerListStyle(snapshot.isDraggingOver)}>
                     {question.frames.map((answer, index) => {
                         return (
                             <Draggable key={`${questionNum}${index}`} draggableId={`${questionNum}${index}`} index={index}>
                                 {(provided, snapshot) => (
-                                    <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
-                                        <span {...provided.dragHandleProps}>
+                                    <span {...provided.dragHandleProps}>
+                                        <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
                                             <Frame frames={answer} />
-                                        </span>
-                                    </div>
+                                        </div>
+                                    </span>
                                 )}
                             </Draggable>
                         );

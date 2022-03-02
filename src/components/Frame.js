@@ -6,7 +6,7 @@ const IMAGE_PIXEL_LENGTH = 16;
 const pixelSize = 8;
 
 class Frame extends Component {
-    // will need to fill in this method to check for when we should re-render
+    // determines when the Component should re-render
     shouldComponentUpdate(nextProps, nextState) {
         if (arraysOrderAreEqual(this.props.frames, nextProps.frames)) {
             return false;
@@ -16,7 +16,7 @@ class Frame extends Component {
     }
 
     render() {
-        console.log('rendering styled frame')
+        console.log('rendering styled frame');
         return (
             <Wrapper>
                 <StyledFrame frames={this.props.frames} pixelSize={pixelSize} />
