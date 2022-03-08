@@ -7,7 +7,7 @@ const pixelSize = 8;
 class Frame extends Component {
     // determines when the Component should re-render
     shouldComponentUpdate(nextProps, nextState) {
-        if (arraysOrderAreEqual(this.props.frames, nextProps.frames)) {
+        if (arraysOrderAreEqual(this.props.frame, nextProps.frame)) {
             return false;
         } else {
             return true;
@@ -18,7 +18,7 @@ class Frame extends Component {
         console.log('rendering styled frame');
         return (
             <Wrapper>
-                <StyledFrame frames={this.props.frames} pixelSize={pixelSize} />
+                <StyledFrame frame={this.props.frame} pixelSize={pixelSize} />
             </Wrapper>
         )
     }
@@ -28,7 +28,7 @@ export default Frame
 
 const StyledFrame = styled.div`
 ${(props) => generateCSSDetails(props.pixelSize)}
-${(props) => generateCSSFrameSet(props.pixelSize, props.frames)}`;
+${(props) => generateCSSFrame(props.pixelSize, props.frame)}`;
 
 const Wrapper = styled.section`
     width: 148px;
@@ -38,11 +38,11 @@ const Wrapper = styled.section`
 `;
 
 // wraps the set of color arrays with additional CSS for displaying them as animation
-function generateCSSFrameSet(pixelSize, frames) {
-    let framesCopy = frames;
-    framesCopy = get2Darray(framesCopy);
-    framesCopy = reverseEveryOtherCol(framesCopy);
-    return generateFrame(pixelSize, framesCopy);
+function generateCSSFrame(pixelSize, frame) {
+    let frameCopy = frame;
+    frameCopy = get2Darray(frameCopy);
+    frameCopy = reverseEveryOtherCol(frameCopy);
+    return generateFrame(pixelSize, frameCopy);
 }
 
 // generates the css color array for a single frame of animation
@@ -63,8 +63,7 @@ function generateFrame(pixelSize, data) {
     return result;
 }
 
-// returns the css animation rules
-// tells it how big and how fast to display frames and such
+
 function generateCSSDetails(pixelSize) {
     return `
         position: absolute;
