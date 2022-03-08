@@ -1,8 +1,7 @@
 import { Component } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { Reorder, getItemStyle, getQuestionListStyle } from "../utils";
-import FrameList from "./FrameList";
-import Animation from "./Animation";
+import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { Reorder,  getQuestionListStyle } from "../utils";
+import WholeBox from "./WholeBox";
 
 async function getDataFromServer() {
     const response = await fetch('http://localhost:3000/data');
@@ -64,23 +63,11 @@ class AnimationContainer extends Component {
     render() {
         return (
             <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
-
                 <Droppable droppableId="droppable" type="QUESTIONS">
                     {(provided, snapshot) => (
                         <div ref={provided.innerRef} style={getQuestionListStyle(snapshot.isDraggingOver)} >
                             {this.state.animationList.map((question, index) => (
-
-                                <Draggable key={question.name} draggableId={question.name} index={index} isDragDisabled={false}>
-                                    {(provided, snapshot) => (
-                                        <span {...provided.dragHandleProps}>
-                                            <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
-                                                <Animation data={question} />
-                                                <FrameList questionNum={index} question={question} />
-                                                ID: {question.name}
-                                            </div>
-                                        </span>
-                                    )}
-                                </Draggable>
+                                <WholeBox question={question} index={index} key={question.name}/>
                             ))}
                             {provided.placeholder}
                         </div>
