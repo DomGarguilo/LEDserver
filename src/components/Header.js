@@ -1,60 +1,96 @@
-import { useEffect, useState } from "react";
+import { Component } from "react";
 import { assertTrue, getHeaderStyle } from "../utils"
-import UploadPreview from "./UploadPreview";
 import Frame from "./Frame";
 import { IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils";
 import { v4 as uuid } from 'uuid';
 
-export default function Header() {
-    const [images, setImages] = useState([]);
-    const [imageURLs, setImageURLs] = useState([]);
-
-    useEffect(() => {
-        if (images.length < 1) return;
-        const newImageURLs = [];
-        images.forEach(image => newImageURLs.push(URL.createObjectURL(image)));
-        setImageURLs(newImageURLs);
-    }, [images]);
-
-    function onImageChange(e) {
-        setImages([...e.target.files]);
+class Header extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            images: []
+        };
     }
 
+    onImageChange = event => {
+        if (!event.target.files || !event.target.files[0]) {
+            return;
+        }
 
-    return (
-        <div className="Header" style={getHeaderStyle()}>
-            <input type="file" multiple accept="image/*" onChange={onImageChange} />
-            {imageURLs.map(imageSrc => {
-                const ID = uuid();
-                const binkers = getImageData(imageSrc);
-                const binkersData = getHexArray(binkers);
-                console.log('BINKERS: ');
-                console.log(binkersData);
-                return (
-                    <>
-                        <Frame frame={binkersData} />
-                        <img src={imageSrc} key={ID} width="16" height="16" />
-                    </>
+        // grab image urls from the event
+        var imgURLarray = [];
+        for (var i = 0; i < event.target.files.length; i++) {
+            const imgFile = event.target.files[i];
+            const imgURL = URL.createObjectURL(imgFile);
+            imgURLarray.push(imgURL);
+        }
 
-                );
-            })}
-        </div>
-    );
+        // load all of the images
+        loadImages(imgURLarray).then(imgArray => {
+            // convert all images to hex arrays
+            var hexArraySet = [];
+            for (let img of imgArray) {
+                const imgData = getImageData(img)
+                const hexArray = getHexArray(imgData);
+                hexArraySet.push(hexArray);
+            }
+            // set the hex color arrays to state
+            this.setState({
+                images: hexArraySet
+            });
+        });
+
+    };
+
+    // I now think this isnt working because image is async so gotta figure out how to deal with async map
+    render() {
+        return (
+            <div className="Header" style={getHeaderStyle()} >
+                <input type="file" multiple accept="image/*" onChange={this.onImageChange} />
+                {this.state.images.map(hexArray => {
+                    return <Frame frame={hexArray} key={uuid()}/>;
+                })}
+            </div >
+        )
+    };
 }
 
-// either need to make a separate comonent to convert list of images to canvas to framlist
-// or convert them first then send to another component to be displayed.
+export default Header;
 
-function getImageData(imageSrc) {
-    const img = new Image();
-    img.src = imageSrc;
 
+async function loadImages(imageUrlArray) {
+    const promiseArray = []; // create an array for promises
+    const imageArray = []; // array for the images
+
+    for (let imageUrl of imageUrlArray) {
+        promiseArray.push(new Promise(resolve => {
+            const img = new Image();
+            img.onload = resolve;
+            img.src = imageUrl;
+            imageArray.push(img);
+        }));
+    }
+
+    await Promise.all(promiseArray); // wait for all the images to be loaded
+    console.log("all images loaded");
+    return imageArray;
+}
+
+
+function getImageData(img) {
+    //const img = await loadImage(imageUrl);
     const canvas = document.createElement("canvas");
     canvas.width = IMAGE_PIXEL_LENGTH;
     canvas.height = IMAGE_PIXEL_LENGTH;
     const context = canvas.getContext("2d");
-    context.drawImage(img, 0, 0);
-    const imageData = context.getImageData(0, 0, IMAGE_PIXEL_LENGTH, IMAGE_PIXEL_LENGTH);
+
+    // scale image to fit canvas
+    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    const x = (canvas.width / 2) - (img.width / 2) * scale;
+    const y = (canvas.height / 2) - (img.height / 2) * scale;
+
+    context.drawImage(img, x, y, img.width * scale, img.height * scale);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     return imageData;
 }
 
