@@ -1,15 +1,24 @@
 import { Component } from "react";
-import { assertTrue, getHeaderStyle } from "../utils"
-import Frame from "./Frame";
-import { IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils";
-import { v4 as uuid } from 'uuid';
+import { assertTrue, getHeaderStyle,arraysOrderAreEqual, Reorder, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils"
+import { DragDropContext } from "react-beautiful-dnd";
+import FrameList from "./FrameList";
 
 class Header extends Component {
     constructor(props) {
         super(props);
+
         this.state = {
-            images: []
+            name: 'john',
+            frameDuration: 2,
+            repeatCount: 3,
+            frames: []
         };
+        this.onDragEnd = this.onDragEnd.bind(this);
+    }
+
+    // determines when the Component should re-render
+    shouldComponentUpdate(nextProps, nextState) {
+        return !arraysOrderAreEqual(this.state.frames, nextState.frames);
     }
 
     onImageChange = event => {
@@ -17,7 +26,7 @@ class Header extends Component {
             return;
         }
 
-        // grab image urls from the event
+        // grab image urls from the upload event
         var imgURLarray = [];
         for (var i = 0; i < event.target.files.length; i++) {
             const imgFile = event.target.files[i];
@@ -36,20 +45,37 @@ class Header extends Component {
             }
             // set the hex color arrays to state
             this.setState({
-                images: hexArraySet
+                frames: hexArraySet
             });
         });
 
     };
 
-    // I now think this isnt working because image is async so gotta figure out how to deal with async map
+    onDragEnd(result) {
+        // dropped outside the list
+        if (!result.destination) {
+            console.log('NOT EQUALS');
+            return;
+        }
+
+        const reorderedFrames = Reorder(
+            this.state.frames,
+            result.source.index,
+            result.destination.index
+        );
+
+        this.setState({
+            frames: reorderedFrames
+        });
+    }
+
     render() {
         return (
             <div className="Header" style={getHeaderStyle()} >
                 <input type="file" multiple accept="image/*" onChange={this.onImageChange} />
-                {this.state.images.map(hexArray => {
-                    return <Frame frame={hexArray} key={uuid()}/>;
-                })}
+                <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
+                    <FrameList question={this.state} questionNum={1} dragSwitch={true} />
+                </DragDropContext>
             </div >
         )
     };
