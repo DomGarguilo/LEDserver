@@ -10,6 +10,7 @@ class App extends Component {
     super(props);
 
     this.setAnimationState.bind(this);
+    this.pushNewAnimation.bind(this);
 
     this.state = { animationList: [] };
   }
@@ -25,10 +26,16 @@ class App extends Component {
     this.setState({ animationList: newAnimationList });
   }
 
+  pushNewAnimation = (newAnimation) => {
+    const currentList = this.state.animationList;
+    currentList.push(newAnimation);
+    this.setState({ animationList: currentList });
+  }
+
   render() {
     return (
       <>
-        <Header />
+        <Header pushNewAnimation={this.pushNewAnimation} />
         <AnimationContainer animationList={this.state.animationList} setAnimationState={this.setAnimationState} />
       </>
     );

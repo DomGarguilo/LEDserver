@@ -37,6 +37,7 @@ const Wrapper = styled.section`
 
 // wraps the set of color arrays with additional CSS for displaying them as animation
 function generateCSSFrameSet(pixelSize, frames, name) {
+    console.log('HERE')
     const rangeList = getCSSAnimationTimings(frames.length);
     const frameList = frames;
     assertTrue(frameList.length > 0,"Frame list should contain frames. (non-zero length)");

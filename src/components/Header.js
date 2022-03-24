@@ -9,7 +9,7 @@ class Header extends Component {
         super(props);
 
         this.state = {
-            name: uuid(),
+            name: 'placeholder',
             frameDuration: 2,
             repeatCount: 3,
             frames: []
@@ -79,7 +79,10 @@ class Header extends Component {
             console.log('Nothing to upload, state.frames is empty');
             return;
         }
-        console.log(JSON.stringify(this.state));
+        const newAnimation = this.state;
+        newAnimation.name = uuid();
+        this.setState({frames:[]});
+        this.props.pushNewAnimation(newAnimation);
     }
 
     render() {

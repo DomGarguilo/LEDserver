@@ -19,19 +19,15 @@ class AnimationContainer extends Component {
             return;
         }
 
-        // outer, animation + frame draggable part
+        // if a WholeBox is being dragged
         if (result.type === "QUESTIONS") {
             const animationList = Reorder(
                 this.props.animationList,
                 result.source.index,
                 result.destination.index
             );
-
             this.props.setAnimationState(animationList);
-            // this.setState({
-            //     animationList
-            // });
-        } else {
+        } else { // if an individual frame is being dragged
             const reorderedFrames = Reorder(
                 this.props.animationList[parseInt(result.type, 10)].frames,
                 result.source.index,
@@ -43,9 +39,6 @@ class AnimationContainer extends Component {
             animationList[result.type].frames = reorderedFrames;
 
             this.props.setAnimationState(animationList);
-            // this.setState({
-            //     animationList
-            // });
         }
     }
 
