@@ -1,6 +1,7 @@
 import { Component } from "react";
-import { assertTrue, getHeaderStyle,arraysOrderAreEqual, Reorder, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils"
+import { assertTrue, getHeaderStyle, arraysOrderAreEqual, Reorder, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils"
 import { DragDropContext } from "react-beautiful-dnd";
+import { v4 as uuid } from 'uuid';
 import FrameList from "./FrameList";
 
 class Header extends Component {
@@ -8,12 +9,14 @@ class Header extends Component {
         super(props);
 
         this.state = {
-            name: 'john',
+            name: uuid(),
             frameDuration: 2,
             repeatCount: 3,
             frames: []
         };
         this.onDragEnd = this.onDragEnd.bind(this);
+        this.onImageChange = this.onImageChange.bind(this);
+        this.onInsert = this.onInsert.bind(this);
     }
 
     // determines when the Component should re-render
@@ -21,6 +24,7 @@ class Header extends Component {
         return !arraysOrderAreEqual(this.state.frames, nextState.frames);
     }
 
+    // when images are selected from file explorer
     onImageChange = event => {
         if (!event.target.files || !event.target.files[0]) {
             return;
@@ -51,6 +55,7 @@ class Header extends Component {
 
     };
 
+    // reorders the frams based on where they were dragged
     onDragEnd(result) {
         // dropped outside the list
         if (!result.destination) {
@@ -69,10 +74,19 @@ class Header extends Component {
         });
     }
 
+    onInsert() {
+        if (this.state.frames.length === 0) {
+            console.log('Nothing to upload, state.frames is empty');
+            return;
+        }
+        console.log(JSON.stringify(this.state));
+    }
+
     render() {
         return (
             <div className="Header" style={getHeaderStyle()} >
                 <input type="file" multiple accept="image/*" onChange={this.onImageChange} />
+                <button onClick={this.onInsert}>Insert new animation into queue</button>
                 <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
                     <FrameList question={this.state} questionNum={1} dragSwitch={true} />
                 </DragDropContext>
@@ -84,6 +98,9 @@ class Header extends Component {
 export default Header;
 
 
+// accepts an array of image URLs
+// waits for them to load
+// returns an array of those loaded images
 async function loadImages(imageUrlArray) {
     const promiseArray = []; // create an array for promises
     const imageArray = []; // array for the images
@@ -102,9 +119,10 @@ async function loadImages(imageUrlArray) {
     return imageArray;
 }
 
-
+// accepts an image object
+// returns the data from that image
 function getImageData(img) {
-    //const img = await loadImage(imageUrl);
+    // create in-memory canvas
     const canvas = document.createElement("canvas");
     canvas.width = IMAGE_PIXEL_LENGTH;
     canvas.height = IMAGE_PIXEL_LENGTH;
@@ -115,11 +133,15 @@ function getImageData(img) {
     const x = (canvas.width / 2) - (img.width / 2) * scale;
     const y = (canvas.height / 2) - (img.height / 2) * scale;
 
+    // draw the image to the canvas
     context.drawImage(img, x, y, img.width * scale, img.height * scale);
+    // grab then return the image data from the new canvas
     const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     return imageData;
 }
 
+
+// converts image data from a canvas into a hex color array
 function getHexArray(imageData) {
     const data = imageData.data;
     assertTrue((data.length / 4) === FRAME_PIXEL_COUNT, "Unexpected data size in uploadImage");

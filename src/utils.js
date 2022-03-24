@@ -140,3 +140,9 @@ export const getJsonOrder = async () => {
     console.log('Get request to pull image order from server. Response: ' + jsonOrder.order);
     return jsonOrder;
 }
+
+export const getDataFromServer = async () => {
+    const response = await fetch('http://localhost:3000/data');
+    const data = await response.json();
+    return data;
+}
