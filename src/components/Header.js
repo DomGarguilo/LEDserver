@@ -9,9 +9,6 @@ class Header extends Component {
         super(props);
 
         this.state = {
-            name: 'placeholder',
-            frameDuration: 2,
-            repeatCount: 3,
             frames: []
         };
         this.onDragEnd = this.onDragEnd.bind(this);
@@ -79,8 +76,13 @@ class Header extends Component {
             console.log('Nothing to upload, state.frames is empty');
             return;
         }
-        const newAnimation = this.state;
-        newAnimation.name = uuid();
+        const newAnimation = {
+            name: uuid(),
+            frameDuration: 2,
+            repeatCount: 3,
+            frames: this.state.frames
+        }
+        //newAnimation.name = uuid();
         this.setState({frames:[]});
         this.props.pushNewAnimation(newAnimation);
     }
