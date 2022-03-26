@@ -3,26 +3,13 @@ import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { Reorder,  getQuestionListStyle } from "../utils";
 import WholeBox from "./WholeBox";
 
-async function getDataFromServer() {
-    const response = await fetch('http://localhost:3000/data');
-    const data = await response.json();
-    return data;
-}
+
 
 class AnimationContainer extends Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-            animationList: []
-        };
         this.onDragEnd = this.onDragEnd.bind(this);
-    }
-
-    async componentDidMount() {
-        const data = await getDataFromServer();
-        this.setState({ animationList: data.animationList });
-        //console.log(this.state.animationList);
     }
 
     onDragEnd(result) {
@@ -32,31 +19,26 @@ class AnimationContainer extends Component {
             return;
         }
 
-        // outer, animation + frame draggable part
+        // if a WholeBox is being dragged
         if (result.type === "QUESTIONS") {
             const animationList = Reorder(
-                this.state.animationList,
+                this.props.animationList,
                 result.source.index,
                 result.destination.index
             );
-
-            this.setState({
-                animationList
-            });
-        } else {
+            this.props.setAnimationState(animationList);
+        } else { // if an individual frame is being dragged
             const reorderedFrames = Reorder(
-                this.state.animationList[parseInt(result.type, 10)].frames,
+                this.props.animationList[parseInt(result.type, 10)].frames,
                 result.source.index,
                 result.destination.index
             );
 
-            const animationList = this.state.animationList;
+            const animationList = this.props.animationList;
 
             animationList[result.type].frames = reorderedFrames;
 
-            this.setState({
-                animationList
-            });
+            this.props.setAnimationState(animationList);
         }
     }
 
@@ -66,7 +48,7 @@ class AnimationContainer extends Component {
                 <Droppable droppableId="droppable" type="QUESTIONS">
                     {(provided, snapshot) => (
                         <div ref={provided.innerRef} style={getQuestionListStyle(snapshot.isDraggingOver)} >
-                            {this.state.animationList.map((question, index) => (
+                            {this.props.animationList.map((question, index) => (
                                 <WholeBox question={question} index={index} key={question.name}/>
                             ))}
                             {provided.placeholder}

@@ -5,7 +5,10 @@ import { assertTrue, get2Darray, reverseEveryOtherCol, IMAGE_PIXEL_LENGTH, FRAME
 const pixelSize = 10;
 
 class Animation extends Component {
-    // will need to fill in this method to check for when we should re-render
+    constructor(props) {
+        super(props);
+    }
+
     shouldComponentUpdate(nextProps, nextState) {
         return false;
     }
@@ -24,8 +27,8 @@ class Animation extends Component {
 export default Animation;
 
 const StyledFrame = styled.div`
-${(props) => generateCSSDetails(props.name)}
-${(props) => generateCSSFrameSet(props.pixelSize, props.frames, props.name)}
+${(props) =>  generateCSSDetails(props.name)}
+${(props) =>  generateCSSFrameSet(props.pixelSize, props.frames, props.name)}
 `;
 
 const Wrapper = styled.section`
@@ -36,7 +39,8 @@ const Wrapper = styled.section`
 `;
 
 // wraps the set of color arrays with additional CSS for displaying them as animation
-function generateCSSFrameSet(pixelSize, frames, name) {
+ function generateCSSFrameSet(pixelSize, frames, name) {
+    console.log('HERE')
     const rangeList = getCSSAnimationTimings(frames.length);
     const frameList = frames;
     assertTrue(frameList.length > 0,"Frame list should contain frames. (non-zero length)");
@@ -92,7 +96,7 @@ function generateFrame(pixelSize, frameRange, data) {
 
 // returns the css animation rules
 // tells it how big and how fast to display frames and such
-function generateCSSDetails(name, frameDuration) {
+ function generateCSSDetails(name, frameDuration) {
     return `
         display: block;
         margin-bottom: 170px;

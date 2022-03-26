@@ -7,11 +7,7 @@ const pixelSize = 8;
 class Frame extends Component {
     // determines when the Component should re-render
     shouldComponentUpdate(nextProps, nextState) {
-        if (arraysOrderAreEqual(this.props.frame, nextProps.frame)) {
-            return false;
-        } else {
-            return true;
-        }
+        return !arraysOrderAreEqual(this.props.frame, nextProps.frame);
     }
 
     render() {

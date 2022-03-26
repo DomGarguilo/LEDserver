@@ -48,8 +48,8 @@ export const getFrameStyle = () => ({
 });
 
 export const getHeaderStyle = () => ({
-    height: 100,
-    backgroundColor: "black",
+    height: 300,
+    backgroundColor: "grey",
     itemsAlign: "center",
     color: "white",
     outline: "5px dashed green",
@@ -95,4 +95,54 @@ export const reverseEveryOtherCol = (matrix) => {
         }
     }
     return matrix;
+}
+
+
+// makes a POST req to the server
+// Accepts json object containing hex color array for a new image formatted for use by the matrix
+export const post = async (data, path) => {
+    try {
+        const config = {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }
+        const response = await fetch(path, config);
+        console.log("POSTRRR " + response);
+        if (response.ok) {
+            // maybe maybe this a callback to refresh
+            return await response;
+        } else {
+            console.error("error in response, status not OK");
+        }
+    } catch (error) {
+        return error;
+    }
+}
+
+// fetches the image data json from server
+// comes in array of hex color vals so other functions convert it to css-acceptable code
+export const getJsonData = async () => {
+    const endpoint = document.URL + 'data';
+    const response = await fetch(endpoint);
+    const jsonData = await response.json();
+    console.log('Get request to pull image data made');
+    return jsonData;
+}
+
+//fetches the list of animation order from the server
+export const getJsonOrder = async () => {
+    const endpoint = document.URL + 'order';
+    const response = await fetch(endpoint);
+    const jsonOrder = await response.json();
+    console.log('Get request to pull image order from server. Response: ' + jsonOrder.order);
+    return jsonOrder;
+}
+
+export const getDataFromServer = async () => {
+    const response = await fetch('http://localhost:3000/data');
+    const data = await response.json();
+    return data;
 }
