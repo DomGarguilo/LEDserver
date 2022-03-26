@@ -4,7 +4,9 @@
   "description": "This repo is split into a client side and server side.  The client side consists of a react frontend.  The server side consists of a Node express backend.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "heroku-postbuild": "cd cleint && npm install && npm run build && rm -rf ../server/build && cp r build ../server && cd ../server && npm install && npm start",
+    "start": "node ./server/server"
   },
   "author": "",
   "license": "ISC"
