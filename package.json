@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "heroku-postbuild": "cd client && npm install && npm run build && rm -rf ../server/build && cp r build ../server && cd ../server && npm install && npm start",
+    "heroku-postbuild": "cd client && npm install && npm run build && rm -rf ../server/build && cp -r build ../server && rm -rf build && cd ../server && npm install",
     "start": "node ./server/server"
   },
   "author": "",
