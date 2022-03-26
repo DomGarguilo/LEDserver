@@ -1,8 +1,1 @@
-web: cd cleint
-web: npm install
-web: npm run build
-web: rm -rf ../server/build
-web: cp r build ../server
-web: cd ../server
-web: npm install
-web: npm start
+web: cd cleint && npm install && npm run build && rm -rf ../server/build && cp r build ../server && cd ../server && npm install && npm start
