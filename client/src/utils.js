@@ -142,7 +142,7 @@ export const getJsonOrder = async () => {
 }
 
 export const getDataFromServer = async () => {
-    const response = await fetch(window.location.href + '/data');
+    const response = await fetch(window.location.href + 'data');
     // const response = await fetch('http://localhost:5000/data');
     // console.log(response);
     const data = await response.json();
