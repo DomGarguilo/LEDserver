@@ -1,44 +1,13 @@
 {
-  "name": "app_name",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^1.2.36",
-    "@fortawesome/free-solid-svg-icons": "^5.15.4",
-    "@fortawesome/react-fontawesome": "^0.1.17",
-    "@testing-library/jest-dom": "^5.16.2",
-    "@testing-library/react": "^12.1.4",
-    "@testing-library/user-event": "^13.5.0",
-    "react": "^17.0.2",
-    "react-beautiful-dnd": "^13.1.0",
-    "react-dom": "^17.0.2",
-    "react-scripts": "^5.0.0",
-    "styled-components": "^5.3.3",
-    "uuid": "^8.3.2",
-    "web-vitals": "^2.1.4"
-  },
+  "name": "ledserver",
+  "version": "1.0.0",
+  "description": "This repo is split into a client side and server side.  The client side consists of a react frontend.  The server side consists of a Node express backend.",
+  "main": "index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "heroku-postbuild": "cd client && npm install && npm run build && mv ./build ../server/build && cd ../server && npm install",
+    "start": "node ./server/server"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+  "author": "",
+  "license": "ISC"
 }
