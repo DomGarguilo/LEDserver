@@ -93,7 +93,7 @@ class Header extends Component {
                 <input type="file" multiple accept="image/*" onChange={this.onImageChange} />
                 <button onClick={this.onInsert}>Insert new animation into queue</button>
                 <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
-                    <FrameList question={this.state} questionNum={1} dragSwitch={true} />
+                    <FrameList animationData={this.state} animationIndex={1} dragSwitch={true} />
                 </DragDropContext>
             </div >
         )

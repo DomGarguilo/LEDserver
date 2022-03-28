@@ -5,9 +5,6 @@ import { assertTrue, get2Darray, reverseEveryOtherCol, IMAGE_PIXEL_LENGTH, FRAME
 const pixelSize = 10;
 
 class Animation extends Component {
-    constructor(props) {
-        super(props);
-    }
 
     shouldComponentUpdate(nextProps, nextState) {
         return false;

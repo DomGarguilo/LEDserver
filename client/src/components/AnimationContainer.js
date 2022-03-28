@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
-import { Reorder,  getQuestionListStyle } from "../utils";
+import { Reorder,  getWholeBoxStyle } from "../utils";
 import WholeBox from "./WholeBox";
 
 
@@ -20,36 +20,36 @@ class AnimationContainer extends Component {
         }
 
         // if a WholeBox is being dragged
-        if (result.type === "QUESTIONS") {
-            const animationList = Reorder(
-                this.props.animationList,
+        if (result.type === "ANIMATIONS") {
+            const reorderedAnimationDataList = Reorder(
+                this.props.animationDataList,
                 result.source.index,
                 result.destination.index
             );
-            this.props.setAnimationState(animationList);
+            this.props.setAnimationState(reorderedAnimationDataList);
         } else { // if an individual frame is being dragged
             const reorderedFrames = Reorder(
-                this.props.animationList[parseInt(result.type, 10)].frames,
+                this.props.animationDataList[result.type].frames,
                 result.source.index,
                 result.destination.index
             );
 
-            const animationList = this.props.animationList;
+            const animationDataListCopy = this.props.animationDataList;
 
-            animationList[result.type].frames = reorderedFrames;
+            animationDataListCopy[result.type].frames = reorderedFrames;
 
-            this.props.setAnimationState(animationList);
+            this.props.setAnimationState(animationDataListCopy);
         }
     }
 
     render() {
         return (
             <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
-                <Droppable droppableId="droppable" type="QUESTIONS">
+                <Droppable droppableId="droppable" type="ANIMATIONS">
                     {(provided, snapshot) => (
-                        <div ref={provided.innerRef} style={getQuestionListStyle(snapshot.isDraggingOver)} >
-                            {this.props.animationList.map((question, index) => (
-                                <WholeBox question={question} index={index} key={question.name}/>
+                        <div ref={provided.innerRef} style={getWholeBoxStyle(snapshot.isDraggingOver)} >
+                            {this.props.animationDataList.map((animationData, index) => (
+                                <WholeBox animationData={animationData} index={index} key={animationData.name}/>
                             ))}
                             {provided.placeholder}
                         </div>

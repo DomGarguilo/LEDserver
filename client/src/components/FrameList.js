@@ -1,22 +1,22 @@
 import React, { PureComponent } from 'react'
 import { Droppable, Draggable } from "react-beautiful-dnd";
-import { getItemStyle, getAnswerListStyle } from "../utils";
+import { getItemStyle, getFrameListStyle } from "../utils";
 import Frame from "./Frame";
 
 class FrameList extends PureComponent {
     render() {
-        const { question, questionNum, dragSwitch } = this.props;
+        const { animationData, animationIndex, dragSwitch } = this.props;
         return (
-            <Droppable droppableId={`droppable${question.name}`} type={`${questionNum}`} direction="horizontal">
+            <Droppable droppableId={`droppable${animationData.name}`} type={`${animationIndex}`} direction="horizontal">
                 {(provided, snapshot) => (
-                    <div ref={provided.innerRef} style={getAnswerListStyle(snapshot.isDraggingOver)}>
-                        {question.frames.map((answer, index) => {
+                    <div ref={provided.innerRef} style={getFrameListStyle(snapshot.isDraggingOver)}>
+                        {animationData.frames.map((frame, index) => {
                             return (
-                                <Draggable key={`${questionNum}${index}`} draggableId={`${questionNum}${index}`} index={index} isDragDisabled={!dragSwitch}>
+                                <Draggable key={`${animationIndex}${index}`} draggableId={`${animationIndex}${index}`} index={index} isDragDisabled={!dragSwitch}>
                                     {(provided, snapshot) => (
                                         <span {...provided.dragHandleProps}>
                                             <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
-                                                <Frame frame={answer} />
+                                                <Frame frame={frame} />
                                             </div>
                                         </span>
                                     )}

@@ -7,17 +7,17 @@ import { getItemStyle } from 'utils';
 
 
 function WholeBox(props) {
-    const { question, index } = props;
+    const { animationData, index } = props;
     const [value, setValue] = useState(false);
     return (
-        <Draggable key={question.name} draggableId={question.name} index={index} isDragDisabled={false}>
+        <Draggable key={animationData.name} draggableId={animationData.name} index={index} isDragDisabled={false}>
             {(provided, snapshot) => (
                 <span {...provided.dragHandleProps}>
                     <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
-                        <Animation data={question} />
-                        <FrameList questionNum={index} question={question} dragSwitch={value}/>
+                        <Animation data={animationData} />
+                        <FrameList animationData={animationData} animationIndex={index} dragSwitch={value} />
                         <Switch isOn={value} handleToggle={() => setValue(!value)} />
-                        ID: {question.name}
+                        ID: {animationData.name}
                     </div>
                 </span>
             )}

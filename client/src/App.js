@@ -36,7 +36,7 @@ class App extends Component {
     return (
       <>
         <Header pushNewAnimation={this.pushNewAnimation} />
-        <AnimationContainer animationList={this.state.animationList} setAnimationState={this.setAnimationState} />
+        <AnimationContainer animationDataList={this.state.animationList} setAnimationState={this.setAnimationState} />
       </>
     );
   }
