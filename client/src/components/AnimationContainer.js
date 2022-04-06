@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
-import { Reorder,  getWholeBoxStyle } from "../utils";
+import { Reorder, getWholeBoxStyle } from "../utils";
 import WholeBox from "./WholeBox";
 
 
@@ -49,7 +49,7 @@ class AnimationContainer extends Component {
                     {(provided, snapshot) => (
                         <div ref={provided.innerRef} style={getWholeBoxStyle(snapshot.isDraggingOver)} >
                             {this.props.animationDataList.map((animationData, index) => (
-                                <WholeBox animationData={animationData} index={index} key={animationData.name}/>
+                                <WholeBox animationData={animationData} index={index} key={animationData.name} />
                             ))}
                             {provided.placeholder}
                         </div>

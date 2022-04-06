@@ -82,8 +82,7 @@ class Header extends Component {
             repeatCount: 3,
             frames: this.state.frames
         }
-        //newAnimation.name = uuid();
-        this.setState({frames:[]});
+        this.setState({ frames: [] });
         this.props.pushNewAnimation(newAnimation);
     }
 

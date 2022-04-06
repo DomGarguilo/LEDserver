@@ -6,7 +6,7 @@ import Switch from "./Switch";
 import { getItemStyle } from 'utils';
 
 
-function WholeBox(props) {
+const WholeBox = (props) => {
     const { animationData, index } = props;
     const [value, setValue] = useState(false);
     return (

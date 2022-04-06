@@ -2,9 +2,9 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 5000;
 const { readFileSync, writeFileSync } = require('fs');
-const path = require('path')
+const path = require('path');
 const bodyParser = require('body-parser');
-const cors = require('cors')
+const cors = require('cors');
 const favicon = require('serve-favicon');
 
 const orderFilePath = path.join(__dirname, 'data', 'order.json');

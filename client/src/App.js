@@ -26,10 +26,11 @@ class App extends Component {
     this.setState({ animationList: newAnimationList });
   }
 
+  // helper function to push new animation into the queue
   pushNewAnimation = (newAnimation) => {
     const currentList = this.state.animationList;
     currentList.push(newAnimation);
-    this.setState({ animationList: currentList });
+    this.setAnimationState(currentList);
   }
 
   render() {

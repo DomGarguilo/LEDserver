@@ -1,32 +1,28 @@
-import React, { Component } from 'react'
+import React, { memo } from 'react'
 import styled from 'styled-components';
 import { assertTrue, get2Darray, reverseEveryOtherCol, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from 'utils';
 
 const pixelSize = 10;
 
-class Animation extends Component {
+const Animation = (props) => {
 
-    shouldComponentUpdate(nextProps, nextState) {
-        return false;
-    }
-    
-    render() {
-        const { name, frameDuration, repeatCount, frames } = this.props.data;
+        const { name, frameDuration, repeatCount, frames } = props.data;
         console.log('Creating animation '+ name);
         return (
             <Wrapper>
                 <StyledFrame name={name} pixelSize={pixelSize} frameDuration={frameDuration} repeatCount={repeatCount} frames={frames} />
             </Wrapper>
         )
-    }
+    
 };
 
 export default Animation;
 
-const StyledFrame = styled.div`
+// memoized this so that it wont re-render with same props
+const StyledFrame = memo(styled.div`
 ${(props) =>  generateCSSDetails(props.name)}
 ${(props) =>  generateCSSFrameSet(props.pixelSize, props.frames, props.name)}
-`;
+`);
 
 const Wrapper = styled.section`
     width: 180px;
