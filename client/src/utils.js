@@ -1,3 +1,6 @@
+// const SERVER_ROOT_URL = window.location.href;
+const SERVER_ROOT_URL = 'http://localhost:5000/';
+
 export const IMAGE_PIXEL_LENGTH = 16;
 export const FRAME_PIXEL_COUNT = Math.pow(IMAGE_PIXEL_LENGTH, 2);
 
@@ -29,12 +32,12 @@ export const getItemStyle = (isDragging, draggableStyle) => {
     };
 };
 
-export const getQuestionListStyle = (isDraggingOver) => ({
+export const getWholeBoxStyle = (isDraggingOver) => ({
     background: isDraggingOver ? "orange" : "lightgrey",
     padding: 8
 });
 
-export const getAnswerListStyle = (isDraggingOver) => ({
+export const getFrameListStyle = (isDraggingOver) => ({
     background: isDraggingOver ? "orange" : "lightgrey",
     padding: 4,
     height: 180,
@@ -113,7 +116,7 @@ export const post = async (data, path) => {
         console.log("POSTRRR " + response);
         if (response.ok) {
             // maybe maybe this a callback to refresh
-            return await response;
+            return response;
         } else {
             console.error("error in response, status not OK");
         }
@@ -124,12 +127,11 @@ export const post = async (data, path) => {
 
 // fetches the image data json from server
 // comes in array of hex color vals so other functions convert it to css-acceptable code
-export const getJsonData = async () => {
-    const endpoint = document.URL + 'data';
+export const getDataFromServer = async () => {
+    const endpoint = SERVER_ROOT_URL + 'data';
     const response = await fetch(endpoint);
-    const jsonData = await response.json();
-    console.log('Get request to pull image data made');
-    return jsonData;
+    const data = await response.json();
+    return data;
 }
 
 //fetches the list of animation order from the server
@@ -139,12 +141,4 @@ export const getJsonOrder = async () => {
     const jsonOrder = await response.json();
     console.log('Get request to pull image order from server. Response: ' + jsonOrder.order);
     return jsonOrder;
-}
-
-export const getDataFromServer = async () => {
-    const response = await fetch(window.location.href + 'data');
-    // const response = await fetch('http://localhost:5000/data');
-    // console.log(response);
-    const data = await response.json();
-    return data;
 }

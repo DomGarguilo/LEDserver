@@ -1,7 +1,7 @@
 import { Component } from "react";
 import Header from './components/Header';
 import AnimationContainer from './components/AnimationContainer';
-import { getDataFromServer } from 'utils';
+import { getDataFromServer, post } from 'utils';
 
 import './App.css';
 
@@ -9,8 +9,9 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.setAnimationState.bind(this);
-    this.pushNewAnimation.bind(this);
+    this.setAnimationState = this.setAnimationState.bind(this);
+    this.pushNewAnimation = this.pushNewAnimation.bind(this);
+    this.sendStateToServer = this.sendStateToServer.bind(this);
 
     this.state = { animationList: [] };
   }
@@ -26,17 +27,23 @@ class App extends Component {
     this.setState({ animationList: newAnimationList });
   }
 
+  // helper function to push new animation into the queue
   pushNewAnimation = (newAnimation) => {
     const currentList = this.state.animationList;
     currentList.push(newAnimation);
-    this.setState({ animationList: currentList });
+    this.setAnimationState(currentList);
+  }
+
+  sendStateToServer() {
+    const currentList = this.state.animationList;
+    post(currentList, '/data');
   }
 
   render() {
     return (
       <>
-        <Header pushNewAnimation={this.pushNewAnimation} />
-        <AnimationContainer animationList={this.state.animationList} setAnimationState={this.setAnimationState} />
+        <Header pushNewAnimation={this.pushNewAnimation} sendStateToServer={this.sendStateToServer} />
+        <AnimationContainer animationDataList={this.state.animationList} setAnimationState={this.setAnimationState} />
       </>
     );
   }

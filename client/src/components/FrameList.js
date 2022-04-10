@@ -1,32 +1,35 @@
 import React, { PureComponent } from 'react'
 import { Droppable, Draggable } from "react-beautiful-dnd";
-import { getItemStyle, getAnswerListStyle } from "../utils";
+import { getItemStyle, getFrameListStyle } from "../utils";
 import Frame from "./Frame";
 
 class FrameList extends PureComponent {
+
     render() {
-        const { question, questionNum, dragSwitch } = this.props;
+        console.log('rendering FrameList');
         return (
-            <Droppable droppableId={`droppable${question.name}`} type={`${questionNum}`} direction="horizontal">
-                {(provided, snapshot) => (
-                    <div ref={provided.innerRef} style={getAnswerListStyle(snapshot.isDraggingOver)}>
-                        {question.frames.map((answer, index) => {
-                            return (
-                                <Draggable key={`${questionNum}${index}`} draggableId={`${questionNum}${index}`} index={index} isDragDisabled={!dragSwitch}>
-                                    {(provided, snapshot) => (
-                                        <span {...provided.dragHandleProps}>
-                                            <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
-                                                <Frame frame={answer} />
-                                            </div>
-                                        </span>
-                                    )}
-                                </Draggable>
-                            );
-                        })}
-                        {provided.placeholder}
-                    </div>
-                )}
-            </Droppable>
+            <>
+                <Droppable droppableId={`droppable${this.props.animationData.name}`} type={`${this.props.animationIndex}`} direction="horizontal">
+                    {(provided, snapshot) => (
+                        <div ref={provided.innerRef} style={getFrameListStyle(snapshot.isDraggingOver)}>
+                            {this.props.animationData.frames.map((frame, index) => {
+                                return (
+                                    <Draggable key={`${this.props.animationIndex}${index}`} draggableId={`${this.props.animationIndex}${index}`} index={index} isDragDisabled={!this.props.dragSwitch}>
+                                        {(provided, snapshot) => (
+                                            <span {...provided.dragHandleProps}>
+                                                <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
+                                                    <Frame frame={frame} />
+                                                </div>
+                                            </span>
+                                        )}
+                                    </Draggable>
+                                );
+                            })}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </>
         );
     };
 };
