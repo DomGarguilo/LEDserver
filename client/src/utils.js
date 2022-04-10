@@ -116,7 +116,7 @@ export const post = async (data, path) => {
         console.log("POSTRRR " + response);
         if (response.ok) {
             // maybe maybe this a callback to refresh
-            return await response;
+            return response;
         } else {
             console.error("error in response, status not OK");
         }

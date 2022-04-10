@@ -14,6 +14,7 @@ class Header extends Component {
         this.onDragEnd = this.onDragEnd.bind(this);
         this.onImageChange = this.onImageChange.bind(this);
         this.onInsert = this.onInsert.bind(this);
+        this.sendAppStateToServer = this.sendAppStateToServer.bind(this);
     }
 
     // determines when the Component should re-render
@@ -86,11 +87,17 @@ class Header extends Component {
         this.props.pushNewAnimation(newAnimation);
     }
 
+    sendAppStateToServer() {
+        console.log('sending state to server, from header');
+        this.props.sendStateToServer();
+    }
+
     render() {
         return (
             <div className="Header" style={getHeaderStyle()} >
                 <input type="file" multiple accept="image/*" onChange={this.onImageChange} />
                 <button onClick={this.onInsert}>Insert new animation into queue</button>
+                <button onClick={this.sendAppStateToServer}>Send state to server</button>
                 <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
                     <FrameList animationData={this.state} animationIndex={1} dragSwitch={true} />
                 </DragDropContext>
