@@ -11,6 +11,7 @@ class App extends Component {
 
     this.setAnimationState = this.setAnimationState.bind(this);
     this.pushNewAnimation = this.pushNewAnimation.bind(this);
+    this.removeFromAnimationList = this.removeFromAnimationList.bind(this);
     this.sendStateToServer = this.sendStateToServer.bind(this);
 
     this.state = { animationList: [] };
@@ -30,8 +31,17 @@ class App extends Component {
   // helper function to push new animation into the queue
   pushNewAnimation = (newAnimation) => {
     const currentList = this.state.animationList;
-    currentList.push(newAnimation);
-    this.setAnimationState(currentList);
+    currentList.unshift(newAnimation);
+    this.setState({ animationList: currentList });
+  }
+
+  // helper function to remove an entry from the animation array
+  removeFromAnimationList = (animationToDelete) => {
+    this.setState({
+      animationList: this.state.animationList.filter(function (animation) {
+        return animation.name !== animationToDelete;
+      })
+    });
   }
 
   sendStateToServer() {
@@ -43,7 +53,7 @@ class App extends Component {
     return (
       <>
         <Header pushNewAnimation={this.pushNewAnimation} sendStateToServer={this.sendStateToServer} />
-        <AnimationContainer animationDataList={this.state.animationList} setAnimationState={this.setAnimationState} />
+        <AnimationContainer animationDataList={this.state.animationList} setAnimationState={this.setAnimationState} removeFromAnimationList={this.removeFromAnimationList} />
       </>
     );
   }

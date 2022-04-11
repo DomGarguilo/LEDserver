@@ -4,11 +4,22 @@ import FrameList from "./FrameList";
 import Animation from "./Animation";
 import Switch from "./Switch";
 import { getItemStyle } from 'utils';
+import trashIcon from '../resources/trash_icon.png';
+
+
 
 
 const WholeBox = (props) => {
-    const { animationData, index } = props;
+    const { animationData, index, removeFromAnimationList } = props;
     const [value, setValue] = useState(false);
+
+    const trashIconStyle = {
+        padding: 5,
+        border: "solid",
+        borderRadius: 8,
+        cursor: "pointer"
+    };
+
     return (
         <Draggable key={animationData.name} draggableId={animationData.name} index={index} isDragDisabled={false}>
             {(provided, snapshot) => (
@@ -17,7 +28,7 @@ const WholeBox = (props) => {
                         <Animation data={animationData} />
                         <FrameList animationData={animationData} animationIndex={index} dragSwitch={value} />
                         <Switch isOn={value} handleToggle={() => setValue(!value)} />
-                        ID: {animationData.name}
+                        <img src={trashIcon} width={26} height={39} style={trashIconStyle} onClick={() => removeFromAnimationList(animationData.name)} alt="trashbin" />
                     </div>
                 </span>
             )}
