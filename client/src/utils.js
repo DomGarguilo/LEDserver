@@ -1,5 +1,5 @@
-// const SERVER_ROOT_URL = window.location.href;
-const SERVER_ROOT_URL = 'http://localhost:5000/';
+const SERVER_ROOT_URL = window.location.href;
+// const SERVER_ROOT_URL = 'http://localhost:5000/';
 
 export const IMAGE_PIXEL_LENGTH = 16;
 export const FRAME_PIXEL_COUNT = Math.pow(IMAGE_PIXEL_LENGTH, 2);
