@@ -27,7 +27,7 @@ const WholeBox = (props) => {
                     <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
                         <Animation data={animationData} />
                         <FrameList animationData={animationData} animationIndex={index} dragSwitch={value} />
-                        <Switch isOn={value} handleToggle={() => setValue(!value)} />
+                        <Switch isOn={value} handleToggle={() => setValue(!value)} name={animationData.name} />
                         <img src={trashIcon} width={26} height={39} style={trashIconStyle} onClick={() => removeFromAnimationList(animationData.name)} alt="trashbin" />
                     </div>
                 </span>
