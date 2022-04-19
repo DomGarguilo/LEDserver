@@ -8,9 +8,11 @@ const Animation = (props) => {
 
         const { name, frameDuration, repeatCount, frames } = props.data;
         console.log('Creating animation '+ name);
+        
+        const scaledFrameDuration = frameDuration*frames.length;
         return (
             <Wrapper>
-                <StyledFrame name={name} pixelSize={pixelSize} frameDuration={frameDuration} repeatCount={repeatCount} frames={frames} />
+                <StyledFrame name={name} pixelSize={pixelSize} frameDuration={scaledFrameDuration} repeatCount={repeatCount} frames={frames} />
             </Wrapper>
         )
     
@@ -20,7 +22,7 @@ export default Animation;
 
 // memoized this so that it wont re-render with same props
 const StyledFrame = memo(styled.div`
-${(props) =>  generateCSSDetails(props.name)}
+${(props) =>  generateCSSDetails(props.name, props.frameDuration)}
 ${(props) =>  generateCSSFrameSet(props.pixelSize, props.frames, props.name)}
 `);
 
@@ -90,14 +92,16 @@ function generateFrame(pixelSize, frameRange, data) {
 // returns the css animation rules
 // tells it how big and how fast to display frames and such
  function generateCSSDetails(name, frameDuration) {
-    return `
-        display: block;
-        margin-bottom: 170px;
-        animation: ` + name + ` 2s infinite;
-        -webkit-animation: ` + name + ` 2s infinite;
-        -moz-animation: ` + name + ` 2s infinite;
-        -o-animation: ` + name + ` 2s infinite;
-    `
+     const css = `
+     display: block;
+     margin-bottom: 170px;
+     animation: ` + name + ` ` + frameDuration + `ms infinite;
+     -webkit-animation: ` + name + ` ` + frameDuration + `ms infinite;
+     -moz-animation: ` + name + ` ` + frameDuration + `ms infinite;
+     -o-animation: ` + name + ` ` + frameDuration + `ms infinite;
+ `;
+ console.log(css);
+    return css;
 }
 
 // EXAMPLE WORKING SYLED FRAME
