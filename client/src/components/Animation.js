@@ -35,7 +35,6 @@ const Wrapper = styled.section`
 
 // wraps the set of color arrays with additional CSS for displaying them as animation
  function generateCSSFrameSet(pixelSize, frames, name) {
-    console.log('HERE')
     const rangeList = getCSSAnimationTimings(frames.length);
     const frameList = frames;
     assertTrue(frameList.length > 0,"Frame list should contain frames. (non-zero length)");
@@ -92,7 +91,7 @@ function generateFrame(pixelSize, frameRange, data) {
 // returns the css animation rules
 // tells it how big and how fast to display frames and such
  function generateCSSDetails(name, frameDuration) {
-     const css = `
+    return `
      display: block;
      margin-bottom: 170px;
      animation: ` + name + ` ` + frameDuration + `ms infinite;
@@ -100,8 +99,6 @@ function generateFrame(pixelSize, frameRange, data) {
      -moz-animation: ` + name + ` ` + frameDuration + `ms infinite;
      -o-animation: ` + name + ` ` + frameDuration + `ms infinite;
  `;
- console.log(css);
-    return css;
 }
 
 // EXAMPLE WORKING SYLED FRAME
