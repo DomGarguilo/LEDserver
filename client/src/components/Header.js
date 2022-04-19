@@ -1,7 +1,6 @@
 import { Component } from "react";
 import { assertTrue, getHeaderStyle, arraysOrderAreEqual, Reorder, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils"
 import { DragDropContext } from "react-beautiful-dnd";
-import { v4 as uuid } from 'uuid';
 import FrameList from "./FrameList";
 
 class Header extends Component {
@@ -78,8 +77,8 @@ class Header extends Component {
             return;
         }
         const newAnimation = {
-            name: uuid(),
-            frameDuration: 2,
+            name: 'ID' + new Date().getTime(),
+            frameDuration: 500,
             repeatCount: 3,
             frames: this.state.frames
         }
