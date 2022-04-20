@@ -33,12 +33,12 @@ export const getItemStyle = (isDragging, draggableStyle) => {
 };
 
 export const getWholeBoxStyle = (isDraggingOver) => ({
-    background: isDraggingOver ? "orange" : "lightgrey",
+    background: isDraggingOver ? "lightpurple" : "lightgrey",
     padding: 8
 });
 
 export const getFrameListStyle = (isDraggingOver) => ({
-    background: isDraggingOver ? "orange" : "lightgrey",
+    background: isDraggingOver ? "lightpurple" : "lightgrey",
     padding: 4,
     height: 180,
     display: "flex"
