@@ -6,12 +6,95 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const favicon = require('serve-favicon');
+const mongo = require('./mongo');
+const animationSchema = require('./schemas/animation-schema');
+const orderSchema = require('./schemas/order-schema');
 
-const orderFilePath = path.join(__dirname, 'data', 'order.json');
-const dataFilePath = path.join(__dirname, 'data', 'data.json');
+// might be able to make this just an array to avoid calling .animationList
+let animationCache = { animationList: [] };
+let orderCache = [];
 
-let animationCache = readFromFile(dataFilePath);
-let orderCache = readFromFile(orderFilePath);
+/**
+ * 
+ * MONGO DB STUFF
+ * 
+ */
+
+// This initializes the animation and order cache from MongoDB
+const connectToMongoDB = async () => {
+  await mongo().then(async mongoose => {
+    try {
+      console.log('Initializing animation cache from database');
+
+      // get order array
+      const orderData = await orderSchema.find({}, { _id: 0 });
+      const order = orderData[0].order;
+      orderCache = order;
+
+      // get all animation data an insert it in the order specified by the order array
+      for (let i = 0; i < orderCache.length; i++) {
+        const currentName = orderCache[i];
+        console.log('looking for ' + currentName)
+        const animation = await animationSchema.find({ name: currentName }, { _id: 0 });
+        assertTrue(animation !== 'undefined', 'Could not find animation for name: ' + currentName);
+        assertTrue(verifyAnimationJson([animation]), 'New animation bad format: ' + animation);
+        animationCache.animationList.push(animation[0]);
+      }
+      assertTrue(orderCache.length === animationCache.animationList.length);
+    } finally {
+      mongoose.connection.close;
+    }
+  });
+}
+
+// Updates the order document with what is currently in order cache
+const updateOrderInMongo = async () => {
+  await mongo().then(async mongoose => {
+    try {
+      console.log('Updating order');
+
+      await orderSchema.updateOne({}, {
+        order: orderCache
+      });
+    } finally {
+      mongoose.connection.close;
+    }
+  });
+}
+
+// Updates animations documents or creates new ones
+const updateAnimationsInMongo = async () => {
+  await mongo().then(async mongoose => {
+    try {
+      console.log('Updating or adding animations');
+      const options = { upsert: true, new: true, setDefaultsOnInsert: true };
+
+      const animationList = animationCache.animationList;
+      assertTrue(verifyAnimationJson(animationList), 'Animation list has bad format. Not interting into DB: ' + animationList);
+
+      for (let i = 0; i < animationList.length; i++) {
+        const currentAnimation = animationList[i];
+        let query = { name: currentAnimation.name };
+        let update = {
+          frameDuration: currentAnimation.frameDuration,
+          repeatCount: currentAnimation.repeatCount,
+          frames: currentAnimation.frames
+        };
+        await animationSchema.findOneAndUpdate(query, update, options);
+      }
+    } finally {
+      mongoose.connection.close;
+    }
+  });
+}
+
+connectToMongoDB();
+
+/**
+ * 
+ * ROUTES AND EXPRESS SETUP
+ * 
+ */
 
 app.use(cors());
 
@@ -45,20 +128,16 @@ app.get('/data', (req, res) => {
   res.json(animationCache);
 });
 
-// GET request for order of animations
-app.get('/order', (req, res) => {
-  console.log('Handling GET request for "/order"');
-  res.json(orderCache);
-})
-
 // POST request to replace the state of animations
+// this will update the order document
+// this will also update the animation documents or create new ones if not exists
 app.post('/data', (req, res) => {
   console.log('POST request recieved for "/data"');
 
   // verify body of post request is valid format
   const newAnimationState = req.body;
   const passed = verifyAnimationJson(newAnimationState);
-  if (passed != null) {
+  if (passed !== true) {
     res.sendStatus(500).end('Recieved data has incorrect format and was not inserted');
     throw new Error(passed);
   }
@@ -69,38 +148,31 @@ app.post('/data', (req, res) => {
   console.log('Repeat count: ' + newAnimationState[0].repeatCount);
   console.log('Frame count: ' + newAnimationState[0].frames.length);
 
-  // update cache
   animationCache.animationList = newAnimationState;
 
-  // write data to animation-data file
+  // grab the current order of the animations
+  const newOrder = [];
+  for (let i = 0; i < animationCache.animationList.length; i++) {
+    newOrder.push(animationCache.animationList[i].name);
+  }
+  orderCache = newOrder;
+
+  // update database
   try {
-    writeToFile(dataFilePath, JSON.stringify(animationCache));
+    updateOrderInMongo();
+    updateAnimationsInMongo();
   } catch (err) {
-    res.sendStatus(501).end('New data has been verified but not written to file');
+    res.sendStatus(501).end('New data has been verified but not written to MongoDB');
   }
   res.sendStatus(200).end('Succesfully updated animation state');
 
 });
 
-app.post('/order', (req, res) => {
-  var data = req.body;
-  orderCache.order = data;
-  writeToFile(orderFilePath, JSON.stringify(data));
-});
-
-// write to file
-function writeToFile(file, data) {
-  writeFileSync(file, data, (err) => {
-    if (err) throw err;
-
-    // success case, the file was saved
-    console.log('File overwritten: ' + file);
-  });
-}
-
-function readFromFile(file) {
-  return JSON.parse(readFileSync(file, 'utf8'));
-}
+/**
+ * 
+ * UTIL FUNCTIONS
+ * 
+ */
 
 // verify that given input is correct format to be inserted into data json
 // returns an error if incorrect or null if it is correct
@@ -121,7 +193,7 @@ function verifyAnimationJson(input) {
       return err;
     }
   });
-  return null;
+  return true;
 }
 
 // testing
