@@ -114,18 +114,21 @@ app.listen(port, () => {
 app.get('/', (req, res) => {
   console.log('Handling GET request for "/". Sending index.html');
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  return;
 });
 
 // test get request, returns 'pong'
 app.get('/ping', (req, res) => {
   console.log('Handling GET request for "/ping"');
   res.json('pong');
+  return;
 });
 
 // GET request for the animation-data json
 app.get('/data', (req, res) => {
   console.log('Handling GET request for "/data"');
   res.json(animationCache);
+  return;
 });
 
 // POST request to replace the state of animations
@@ -163,9 +166,10 @@ app.post('/data', (req, res) => {
     updateAnimationsInMongo();
   } catch (err) {
     res.sendStatus(501).end('New data has been verified but not written to MongoDB');
+    return;
   }
   res.sendStatus(200).end('Succesfully updated animation state');
-
+  return;
 });
 
 /**
