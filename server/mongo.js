@@ -5,10 +5,15 @@ const mongoPW = process.env.DATABASE_PW;
 const mongoPath = `mongodb+srv://domgarguilo:${mongoPW}@led-matrix-server.20lyz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
 module.exports = async () => {
-  await mongoose.connect(mongoPath, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  });
+  try {
+    await mongoose.connect(mongoPath, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
 
   return mongoose;
 };
