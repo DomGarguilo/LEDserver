@@ -141,7 +141,7 @@ app.post('/data', (req, res) => {
   const newAnimationState = req.body;
   const passed = verifyAnimationJson(newAnimationState);
   if (passed !== true) {
-    res.sendStatus(500).end('Recieved data has incorrect format and was not inserted');
+    res.sendStatus(500).send('Recieved data has incorrect format and was not inserted');
     throw new Error(passed);
   }
 
@@ -165,10 +165,10 @@ app.post('/data', (req, res) => {
     updateOrderInMongo();
     updateAnimationsInMongo();
   } catch (err) {
-    res.sendStatus(501).end('New data has been verified but not written to MongoDB');
+    res.sendStatus(501).send('New data has been verified but not written to MongoDB');
     return;
   }
-  res.sendStatus(200).end('Succesfully updated animation state');
+  res.sendStatus(200).send('Succesfully updated animation state');
   return;
 });
 
