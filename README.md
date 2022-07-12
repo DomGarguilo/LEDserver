@@ -6,6 +6,8 @@ The server side consists of a Node, Express, MongoDB backend.
 
 ### Develpment
 
+To install all dependencies for the project, you will need to run `npm install` within the root of the project as well as within `/client` and `/server`. Repeat when updates are made to dependency versions.
+
 During development, you will have to start the server and client separately. Start the server first.
 
 To start the server for development, run `npm run dev` in the root of the project. This starts `server.js` via [nodemon](https://nodemon.io/) which will autoreload when changes are made to that file. If nodemon ever causes issues you can start the server normally via `node server/server.js` but will have to stop and restart if you make changes to `server.js` and want them to take affect.
