@@ -13,4 +13,4 @@ To start the server for development, run `npm run dev` in the root of the projec
 To start the client, in a separate tab, run `npm start` from within `/client`. This will start the react app which will automatically reaload when changes are made.
 
 For now, you will also have to manually change the server URL to localhost [here](https://github.com/DomGarguilo/LEDserver/blob/f2551469884eee1a8bd374dfb83145767c3b14d6/client/src/utils.js#L1-L2
-). There is a ticket tracking this issue.
+). There is [a ticket tracking this issue](https://github.com/DomGarguilo/LEDserver/issues/46).
