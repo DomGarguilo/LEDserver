@@ -8,6 +8,8 @@ The server side consists of a Node, Express, MongoDB backend.
 
 To install all dependencies for the project, you will need to run `npm install` within the root of the project as well as within `/client` and `/server`. Repeat when updates are made to dependency versions.
 
+To connect to the database, you will need to have the database password as a `.env` variable. To do this, reach out to [@DomGarguilo](https://github.com/DomGarguilo) to get the password,  then replace `database_password` with the actual password within `.env.example` and change the file name to `.env`.
+
 During development, you will have to start the server and client separately. Start the server first.
 
 To start the server for development, run `npm run dev` in the root of the project. This starts `server.js` via [nodemon](https://nodemon.io/) which will autoreload when changes are made to that file. If nodemon ever causes issues you can start the server normally via `node server/server.js` but will have to stop and restart if you make changes to `server.js` and want them to take affect.
