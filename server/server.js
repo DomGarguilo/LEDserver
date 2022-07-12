@@ -42,7 +42,7 @@ const connectToMongoDB = async () => {
       }
       assertTrue(orderCache.length === animationCache.animationList.length);
     } finally {
-      mongoose.connection.close;
+      mongoose.connection.close();
     }
   });
 }
