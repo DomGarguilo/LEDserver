@@ -131,6 +131,34 @@ app.get('/data', (req, res) => {
   return;
 });
 
+// GET request for the animation-data json
+app.get('/data/:name', (req, res) => {
+  const name = req.params.name;
+  console.log('Handling GET request for /data/' + name);
+  
+  for(const currentAnimation of animationCache.animationList) {
+    if(currentAnimation.name === name) {
+      if(name === 'mario') {
+        console.debug(currentAnimation);
+      }
+      res.json(currentAnimation);
+      return;
+    }
+  }
+
+  // requested animation wasn't found
+  console.error(err);
+  res.sendStatus(501);
+  return;
+});
+
+// GET request for the animation-data json
+app.get('/order', (req, res) => {
+  console.log('Handling GET request for "/order"');
+  res.json({order: orderCache});
+  return;
+});
+
 // POST request to replace the state of animations
 // this will update the order document
 // this will also update the animation documents or create new ones if not exists
