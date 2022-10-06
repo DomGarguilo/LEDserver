@@ -15,12 +15,22 @@ To install all dependencies for the project, you will need to run `npm install` 
 To connect to the database, you will need to have the database password as an environment variable. To do this, reach out to [@DomGarguilo](https://github.com/DomGarguilo) to get the password. Then create the `.env` file:
 
 ```
-cp .env.example .env         # make a copy of the example file
+cp .env.example .env         # create a .env file from the template
 ``` 
 
 Put the password in place of the `database_password` value in that file.
 
 ### Starting the app
+
+#### Quickstart
+install dependencies, and build the react app:
+```
+npm run postbuild
+```
+start the server (which serves the built react app)
+```
+npm start
+```
 
 During development, you will have to start the server and client separately. Start the server first.
 
