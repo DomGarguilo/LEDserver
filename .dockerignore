@@ -4,4 +4,3 @@
 .gitignore
 .dockerignore
 *.md
-*test/
