@@ -27,8 +27,19 @@ const connectToMongoDB = async () => {
 
       // get order array
       const orderData = await orderSchema.find({}, { _id: 0 });
-      const order = orderData[0].order;
-      orderCache = order;
+      try {
+        orderCache = orderData[0].order;
+      } catch (error) {
+        if (error instanceof TypeError) { // collection does not exist
+          orderCache = [];
+          const newOrder = new orderSchema({ order: [] });
+          newOrder.save(function (err, doc) {
+            console.log('new order arr added to db: ' + doc._id);
+          })
+        } else {
+          throw error;
+        }
+      }
 
       // get all animation data an insert it in the order specified by the order array
       for (let i = 0; i < orderCache.length; i++) {
@@ -41,7 +52,7 @@ const connectToMongoDB = async () => {
       }
       assertTrue(orderCache.length === animationCache.animationList.length);
     } finally {
-      mongoose.connection.close();
+      //mongoose.connection.close();
     }
   });
 }
@@ -56,7 +67,7 @@ const updateOrderInMongo = async () => {
         order: orderCache
       });
     } finally {
-      mongoose.connection.close;
+      //mongoose.connection.close;
     }
   });
 }
@@ -82,7 +93,7 @@ const updateAnimationsInMongo = async () => {
         await animationSchema.findOneAndUpdate(query, update, options);
       }
     } finally {
-      mongoose.connection.close;
+      //mongoose.connection.close;
     }
   });
 }
