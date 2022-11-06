@@ -4,3 +4,6 @@
 .gitignore
 .dockerignore
 *.md
+docker-compose.yaml
+.env.example
+Dockerfile

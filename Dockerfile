@@ -27,5 +27,6 @@ RUN mv ./build ../server
 
 # move back into the root dir to start the app
 WORKDIR /app
+RUN rm -rf client/
 
 CMD ["npm", "start"]
