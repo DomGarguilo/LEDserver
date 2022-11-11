@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "heroku-postbuild": "cd client && npm install && npm run build && mv ./build ../server/build && cd ../server && npm install",
+    "postbuild": "npm install && cd client && npm install && npm run build && rm -rf ../server/build && mv ./build ../server/build && cd ../server && npm install",
+    "heroku-postbuild": "npm run postbuild",
     "start": "node ./server/server",
     "dev": "nodemon server/server.js"
   },
@@ -13,5 +14,8 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
   }
 }
