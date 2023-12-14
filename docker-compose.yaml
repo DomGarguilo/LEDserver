@@ -8,6 +8,8 @@ services:
       - '5000:5000'
     depends_on:
       - mongo
+    networks:
+      - led-server
   mongo:
     image: mongo
     container_name: led-server-mongodb
@@ -16,6 +18,8 @@ services:
       - '27017:27017'
     volumes:
       - mongodata:/data/db
+    networks:
+      - led-server
 networks:
   led-server:
     driver: bridge
