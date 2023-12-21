@@ -8,6 +8,7 @@ const favicon = require('serve-favicon');
 const mongo = require('./mongo');
 const animationSchema = require('./schemas/animation-schema');
 const orderSchema = require('./schemas/order-schema');
+const animations = require('./animations');
 
 // might be able to make this just an array to avoid calling .animationList
 let animationCache = { animationList: [] };
@@ -139,6 +140,50 @@ app.get('/data', (req, res) => {
   console.log('Handling GET request for "/data"');
   res.json(animationCache);
   return;
+});
+
+app.get('/metadata', (req, res) => {
+  const testMetadata = [
+    {
+      "animationID": "anim1",
+      "frameDuration": 500,
+      "repeatCount": 3,
+      "totalFrames": 4
+    },
+    {
+      "animationID": "anim2",
+      "frameDuration": 300,
+      "repeatCount": 2,
+      "totalFrames": 5
+    },
+    {
+      "animationID": "anim3",
+      "frameDuration": 200,
+      "repeatCount": 4,
+      "totalFrames": 3
+    }
+  ];
+  res.send(testMetadata);
+});
+
+// Endpoint to fetch a specific frame of an animation
+app.get('/frameData/:animationId/:frameNumber', (req, res) => {
+  console.log('Handling GET request for "/frameData"');
+  console.log('animationId: ' + req.params.animationId);
+  console.log('frameNumber: ' + req.params.frameNumber);
+  const animationId = req.params.animationId;
+  const frameNumber = parseInt(req.params.frameNumber);
+  const animation = animations[animationId];
+
+  if (animation && frameNumber >= 0 && frameNumber < animation.length) {
+    const frame = animation[frameNumber];
+    const buffer = Buffer.from(frame);
+    console.log('frame size: ' + buffer.length);
+    res.contentType('application/octet-stream');
+    res.send(buffer);
+  } else {
+    res.status(404).send('Animation or frame not found');
+  }
 });
 
 // POST request to replace the state of animations
