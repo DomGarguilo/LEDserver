@@ -5,7 +5,7 @@ const YELLOW_LED = [0xFF, 0xFF, 0x00];
 
 // Function to repeat an LED pattern for the whole frame
 function createFrame(ledColor) {
-    return new Array(9).fill(ledColor).flat();
+    return new Array(256).fill(ledColor).flat();
 }
 
 // Creating full-frame color patterns

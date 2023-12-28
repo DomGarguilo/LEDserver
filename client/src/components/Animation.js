@@ -6,13 +6,13 @@ const pixelSize = 10;
 
 const Animation = (props) => {
 
-        const { name, frameDuration, repeatCount, frames } = props.data;
-        console.log('Creating animation '+ name);
+        const { animationID, frameDuration, repeatCount, frames } = props.data;
+        console.log('Creating animation '+ animationID);
         
         const scaledFrameDuration = frameDuration*frames.length;
         return (
             <Wrapper>
-                <StyledFrame name={name} pixelSize={pixelSize} frameDuration={scaledFrameDuration} repeatCount={repeatCount} frames={frames} />
+                <StyledFrame animationID={animationID} pixelSize={pixelSize} frameDuration={scaledFrameDuration} repeatCount={repeatCount} frames={frames} />
             </Wrapper>
         )
     
@@ -22,8 +22,8 @@ export default Animation;
 
 // memoized this so that it wont re-render with same props
 const StyledFrame = memo(styled.div`
-${(props) =>  generateCSSDetails(props.name, props.frameDuration)}
-${(props) =>  generateCSSFrameSet(props.pixelSize, props.frames, props.name)}
+${(props) =>  generateCSSDetails(props.animationID, props.frameDuration)}
+${(props) =>  generateCSSFrameSet(props.pixelSize, props.frames, props.animationID)}
 `);
 
 const Wrapper = styled.section`
@@ -34,13 +34,13 @@ const Wrapper = styled.section`
 `;
 
 // wraps the set of color arrays with additional CSS for displaying them as animation
- function generateCSSFrameSet(pixelSize, frames, name) {
+ function generateCSSFrameSet(pixelSize, frames, animationID) {
     const rangeList = getCSSAnimationTimings(frames.length);
     const frameList = frames;
     assertTrue(frameList.length > 0,"Frame list should contain frames. (non-zero length)");
     assertTrue(frameList[0].length === FRAME_PIXEL_COUNT);
     assertTrue(frameList.length === rangeList.length,"Frame list and range list should be same length");
-    let result = '@keyframes ' + name + ' {';
+    let result = '@keyframes ' + animationID + ' {';
     for (let i = 0; i < frameList.length; i++) {
         result = result + generateFrame(pixelSize, rangeList[i], reverseEveryOtherCol(get2Darray(frameList[i])));
     }
@@ -90,14 +90,14 @@ function generateFrame(pixelSize, frameRange, data) {
 
 // returns the css animation rules
 // tells it how big and how fast to display frames and such
- function generateCSSDetails(name, frameDuration) {
+ function generateCSSDetails(animationID, frameDuration) {
     return `
      display: block;
      margin-bottom: 170px;
-     animation: ` + name + ` ` + frameDuration + `ms infinite;
-     -webkit-animation: ` + name + ` ` + frameDuration + `ms infinite;
-     -moz-animation: ` + name + ` ` + frameDuration + `ms infinite;
-     -o-animation: ` + name + ` ` + frameDuration + `ms infinite;
+     animation: ` + animationID + ` ` + frameDuration + `ms infinite;
+     -webkit-animation: ` + animationID + ` ` + frameDuration + `ms infinite;
+     -moz-animation: ` + animationID + ` ` + frameDuration + `ms infinite;
+     -o-animation: ` + animationID + ` ` + frameDuration + `ms infinite;
  `;
 }
 

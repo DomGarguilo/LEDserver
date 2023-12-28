@@ -125,13 +125,66 @@ export const post = async (data, path) => {
     }
 }
 
-// fetches the image data json from server
-// comes in array of hex color vals so other functions convert it to css-acceptable code
-export const getDataFromServer = async () => {
-    const endpoint = SERVER_ROOT_URL + 'data';
+export const fetchMetadataFromServer = async () => {
+    const endpoint = SERVER_ROOT_URL + 'metadata';
+    console.log('GET request for metadata from server. Endpoint: ' + endpoint);
     const response = await fetch(endpoint);
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
+    console.log('Metadata received: ' + JSON.stringify(data));
     return data;
+}
+
+export const fetchFrameDataFromServer = async (animationID, frameNum) => {
+    const endpoint = SERVER_ROOT_URL + `frameData/${animationID}/${frameNum}`;
+    console.log('GET request for frame data from server. Endpoint: ' + endpoint);
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    if (response.headers.get("Content-Type") === "application/octet-stream") {
+        const buffer = await response.arrayBuffer();
+        console.log('Frame data received as binary');
+        // Process the binary data as needed for your application
+        return buffer;
+    } else {
+        throw new Error('Unexpected content type');
+    }
+}
+
+// Assuming each pixel's data is 3 bytes (1 byte for red, 1 for green, 1 for blue)
+export const parseFrameData = (buffer) => {
+    const frameData = new Uint8Array(buffer);
+    const pixels = [];
+    for (let i = 0; i < frameData.length; i += 3) {
+        pixels.push([frameData[i], frameData[i + 1], frameData[i + 2]]);
+    }
+    return pixels; // Returns an array of [R, G, B] values
+}
+
+export const convertUint8ArrayToHexColorArray = (uint8Array) => {
+    // Ensure the array has a length that is a multiple of 3
+    if (uint8Array.length % 3 !== 0) {
+        throw new Error("The length of the Uint8Array should be a multiple of 3.");
+    }
+
+    const hexColorArray = [];
+    for (let i = 0; i < uint8Array.length; i += 3) {
+        // Extract RGB values
+        const r = uint8Array[i];
+        const g = uint8Array[i + 1];
+        const b = uint8Array[i + 2];
+
+        // Convert RGB values to a hex string and add to the array
+        hexColorArray.push(rgbToHex(r, g, b));
+    }
+    return hexColorArray;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
 //fetches the list of animation order from the server

@@ -85,7 +85,7 @@ const updateAnimationsInMongo = async () => {
 
       for (let i = 0; i < animationList.length; i++) {
         const currentAnimation = animationList[i];
-        let query = { name: currentAnimation.name };
+        let query = { name: currentAnimation.animationID };
         let update = {
           frameDuration: currentAnimation.frameDuration,
           repeatCount: currentAnimation.repeatCount,
@@ -202,7 +202,7 @@ app.post('/data', (req, res) => {
   }
 
   console.log('Incoming data has passed inspection. First entry:');
-  console.log('ID: ' + newAnimationState[0].name);
+  console.log('ID: ' + newAnimationState[0].animationID);
   console.log('Frame duration: ' + newAnimationState[0].frameDuration);
   console.log('Repeat count: ' + newAnimationState[0].repeatCount);
   console.log('Frame count: ' + newAnimationState[0].frames.length);
@@ -212,7 +212,7 @@ app.post('/data', (req, res) => {
   // grab the current order of the animations
   const newOrder = [];
   for (let i = 0; i < animationCache.animationList.length; i++) {
-    newOrder.push(animationCache.animationList[i].name);
+    newOrder.push(animationCache.animationList[i].animationID);
   }
   orderCache = newOrder;
 
@@ -242,7 +242,7 @@ function verifyAnimationJson(input) {
   input.forEach(animation => {
     try {
       assertTrue(animation != null && animation != undefined, 'given var is null');
-      assertTrue(animation.name != undefined, 'name is undefined');
+      assertTrue(animation.animationID != undefined, 'name is undefined');
       assertTrue(animation.frameDuration != undefined, 'frame duration is undefined');
       assertTrue(animation.repeatCount != undefined, 'repeat count is undefined');
       assertTrue(animation.frames != undefined, 'frame list is undefined');

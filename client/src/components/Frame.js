@@ -78,3 +78,23 @@ height: 10px;
 width: 10px;
 `;
 */
+
+/*
+new format can do
+
+let red = 0xFF; // Convert hex to decimal
+let green = 0x00; // Convert hex to decimal
+let blue = 0x00; // Convert hex to decimal
+
+let color = `rgb(${red}, ${green}, ${blue})`; // Use in CSS
+
+// Then use the color variable in your box-shadow property
+boxShadow: `0 0 1px ${color}`;
+
+or 
+
+let color = `#${((1 << 24) + (red << 16) + (green << 8) + blue).toString(16).slice(1)}`;
+
+// Then use the color variable in your box-shadow property
+boxShadow: `0 0 1px ${color}`;
+*/
