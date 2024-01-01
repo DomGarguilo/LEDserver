@@ -40,4 +40,25 @@ const animations = {
     ]
 };
 
-module.exports = animations;
+const metadata = [
+    {
+      "animationID": "anim1",
+      "frameDuration": 500,
+      "repeatCount": 3,
+      "totalFrames": 4
+    },
+    {
+      "animationID": "anim2",
+      "frameDuration": 300,
+      "repeatCount": 2,
+      "totalFrames": 5
+    },
+    {
+      "animationID": "anim3",
+      "frameDuration": 200,
+      "repeatCount": 4,
+      "totalFrames": 3
+    }
+  ];
+
+module.exports = { animations, metadata };
