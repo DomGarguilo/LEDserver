@@ -75,11 +75,12 @@ export const arraysOrderAreEqual = (a, b) => {
 // converts a 1D array to a 2D array
 // hardcoded 256 1D array -> 16x16 2D array
 export const get2Darray = (arr) => {
-    assertTrue(arr.length === FRAME_PIXEL_COUNT, 'Array length needs to be 256');
+    assertTrue(arr.length === FRAME_PIXEL_COUNT * 3, 'Array length needs to be 256*3');
     let result = Array.from(Array(IMAGE_PIXEL_LENGTH), () => new Array(IMAGE_PIXEL_LENGTH));
     for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
         for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
-            result[i][j] = arr[(j * IMAGE_PIXEL_LENGTH) + i];
+            let index = 3 * ((i * IMAGE_PIXEL_LENGTH) + j);
+            result[i][j] = [arr[index], arr[index + 1], arr[index + 2]];
         }
     }
     return result;
@@ -137,6 +138,11 @@ export const fetchMetadataFromServer = async () => {
     return data;
 }
 
+/**
+ * @param {String} animationID the animation to fetch from
+ * @param {*} frameNum the frame number to fetch
+ * @returns the frame data as a Uint8Array from the server
+ */
 export const fetchFrameDataFromServer = async (animationID, frameNum) => {
     const endpoint = SERVER_ROOT_URL + `frameData/${animationID}/${frameNum}`;
     console.log('GET request for frame data from server. Endpoint: ' + endpoint);
@@ -148,7 +154,7 @@ export const fetchFrameDataFromServer = async (animationID, frameNum) => {
         const buffer = await response.arrayBuffer();
         console.log('Frame data received as binary');
         // Process the binary data as needed for your application
-        return buffer;
+        return new Uint8Array(buffer);
     } else {
         throw new Error('Unexpected content type');
     }

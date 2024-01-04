@@ -1,7 +1,7 @@
 import { Component } from "react";
 import Header from './components/Header';
 import AnimationContainer from './components/AnimationContainer';
-import { fetchMetadataFromServer, fetchFrameDataFromServer, post, convertUint8ArrayToHexColorArray,parseFrameData } from 'utils';
+import { fetchMetadataFromServer, fetchFrameDataFromServer, post } from 'utils';
 
 import './App.css';
 
@@ -20,22 +20,20 @@ class App extends Component {
   // wait for component to mount before pulling data and setting its state
   async componentDidMount() {
     const metadataList = await fetchMetadataFromServer();
-    
+
     const animationsWithFrames = await Promise.all(metadataList.map(async (animationMetadata) => {
-        let frames = [];
-        for (let i = 0; i < animationMetadata.totalFrames; i++) {
-            const frameDataBuffer = await fetchFrameDataFromServer(animationMetadata.animationID, i);
-            const uint8Array = new Uint8Array(frameDataBuffer); // Convert ArrayBuffer to Uint8Array
-            const hexColorArray = convertUint8ArrayToHexColorArray(uint8Array);
-            frames.push(hexColorArray);
-        }
-        return { ...animationMetadata, frames };
+      let frames = [];
+      for (let i = 0; i < animationMetadata.totalFrames; i++) {
+        const frameData = await fetchFrameDataFromServer(animationMetadata.animationID, i);
+        frames.push(frameData);
+      }
+      return { ...animationMetadata, frames };
     }));
 
     console.log(animationsWithFrames);
 
     this.setState({ animationList: animationsWithFrames });
-}
+  }
 
   // helper function to set state from child component
   setAnimationState = (newAnimationList) => {

@@ -1,6 +1,6 @@
 import React, { memo } from 'react'
 import styled from 'styled-components';
-import { assertTrue, get2Darray, reverseEveryOtherCol, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from 'utils';
+import { assertTrue, get2Darray, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from 'utils';
 
 const pixelSize = 10;
 
@@ -38,11 +38,12 @@ const Wrapper = styled.section`
     const rangeList = getCSSAnimationTimings(frames.length);
     const frameList = frames;
     assertTrue(frameList.length > 0,"Frame list should contain frames. (non-zero length)");
-    assertTrue(frameList[0].length === FRAME_PIXEL_COUNT);
+    assertTrue(frameList[0].length === FRAME_PIXEL_COUNT*3);
     assertTrue(frameList.length === rangeList.length,"Frame list and range list should be same length");
     let result = '@keyframes ' + animationID + ' {';
     for (let i = 0; i < frameList.length; i++) {
-        result = result + generateFrame(pixelSize, rangeList[i], reverseEveryOtherCol(get2Darray(frameList[i])));
+        const frameData = get2Darray(frameList[i]);
+        result = result + generateFrame(pixelSize, rangeList[i], frameData);
     }
     result = result + '}'
     return result;
@@ -71,20 +72,22 @@ function getCSSAnimationTimings(num) {
 function generateFrame(pixelSize, frameRange, data) {
     assertTrue(data.length === IMAGE_PIXEL_LENGTH);
     assertTrue(data[0].length === IMAGE_PIXEL_LENGTH);
-    
+
     let result = frameRange + ' {box-shadow:';
-    for (let i = 1; i <= IMAGE_PIXEL_LENGTH; i++) {
-        for (let j = 1; j <= IMAGE_PIXEL_LENGTH; j++) {
-            result += (pixelSize * i).toString() + 'px ' + (pixelSize * j).toString() + 'px 0 0 ' + data[i - 1][j - 1];
-            if (j === IMAGE_PIXEL_LENGTH && i === IMAGE_PIXEL_LENGTH) {
+    for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
+        for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
+            const rgb = data[i][j];
+            const color = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+
+            result += `${(pixelSize * (j + 1))}px ${(pixelSize * (i + 1))}px 0 0 ${color}`;
+            if (j === IMAGE_PIXEL_LENGTH - 1 && i === IMAGE_PIXEL_LENGTH - 1) {
                 result += ';';
             } else {
                 result += ',';
             }
         }
     }
-    result += '\nheight:' + pixelSize.toString() + 'px;\nwidth:' + pixelSize.toString() + 'px;}';
-    result = result.replaceAll('0x', '#');
+    result += `\nheight: ${pixelSize}px;\nwidth: ${pixelSize}px;}`;
     return result;
 }
 
