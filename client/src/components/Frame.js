@@ -44,18 +44,19 @@ function generateCSSFrame(pixelSize, frame) {
 // generates the css color array for a single frame of animation
 function generateFrame(pixelSize, data) {
     let result = 'box-shadow:';
-    for (let i = 1; i <= IMAGE_PIXEL_LENGTH; i++) {
-        for (let j = 1; j <= IMAGE_PIXEL_LENGTH; j++) {
-            result += (pixelSize * i).toString() + 'px ' + (pixelSize * j).toString() + 'px 0 0 ' + data[i - 1][j - 1];
-            if (j === IMAGE_PIXEL_LENGTH && i === IMAGE_PIXEL_LENGTH) {
+    for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
+        for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
+            const [r, g, b] = data[i][j];
+            const color = `rgb(${r}, ${g}, ${b})`;
+            result += `${pixelSize * (j + 1)}px ${pixelSize * (i + 1)}px 0 0 ${color}`;
+            if (j === IMAGE_PIXEL_LENGTH - 1 && i === IMAGE_PIXEL_LENGTH - 1) {
                 result += ';';
             } else {
                 result += ',';
             }
         }
     }
-    result += '\nheight:' + pixelSize.toString() + 'px;\nwidth:' + pixelSize.toString() + 'px;';
-    result = result.replaceAll('0x', '#');
+    result += `\nheight:${pixelSize}px;\nwidth:${pixelSize}px;`;
     return result;
 }
 
