@@ -56,14 +56,19 @@ const connectToDbAndInitCache = async () => {
   });
 }
 
-// Updates animations documents or creates new ones
-const updateAnimationsInMongo = async () => {
-  animationCache.forEach(async (frameData, key) => {
+// Insert all frames in animation cache into mongo
+const pushAnimationCacheToMongo = async () => {
+  for (let [key, frameData] of animationCache.entries()) {
     const animationID = key.ID;
     const frameNumber = key.index;
-    await animationOperations.insertFrame(animationID, frameNumber, frameData);
-  });
-}
+    try {
+      await animationOperations.insertFrame(animationID, frameNumber, frameData);
+    } catch (error) {
+      console.error(`Error inserting frame ${frameNumber} for animation ${animationID}:`, error);
+    }
+  }
+};
+
 
 connectToDbAndInitCache();
 
@@ -106,30 +111,63 @@ app.get('/metadata', (req, res) => {
 });
 
 // Endpoint to fetch a specific frame of an animation
-app.get('/frameData/:animationId/:frameNumber', (req, res) => {
-  console.log('Handling GET request for "/frameData"');
-  console.log('animationId: ' + req.params.animationId);
-  console.log('frameNumber: ' + req.params.frameNumber);
+app.get('/frameData/:animationId/:frameNumber', async (req, res) => {
   const animationId = req.params.animationId;
-  const frameNumber = parseInt(req.params.frameNumber);
-  const animation = testData.animations[animationId];
+  if (!animationId) {
+    return res.status(400).send('Animation ID is required.');
+  }
 
-  if (animation && frameNumber >= 0 && frameNumber < animation.length) {
-    const frame = animation[frameNumber];
+  const frameNumber = parseInt(req.params.frameNumber);
+  if (isNaN(frameNumber)) {
+    return res.status(400).send('Frame number must be a valid number.');
+  }
+
+  try {
+    const animationMetadata = metadataCache.find(metadata => metadata.animationID === animationId);
+    if (!animationMetadata) {
+      console.error(`Animation ID ${animationId} not found.`);
+      return res.status(404).send('Animation ID not found.');
+    }
+
+    if (frameNumber < 0 || frameNumber >= animationMetadata.totalFrames) {
+      console.error(`Frame number ${frameNumber} is out of range for animation ${animationId}.`);
+      return res.status(400).send('Frame number is out of range.');
+    }
+
+    const frame = await animationOperations.fetchFrame(animationId, frameNumber);
+    if (!frame) {
+      console.error(`Could not find frame ${frameNumber} for animation ${animationId}`);
+      return res.status(404).send('Frame not found.');
+    }
+
     const buffer = Buffer.from(frame);
-    console.log('frame size: ' + buffer.length);
     res.contentType('application/octet-stream');
     res.send(buffer);
-  } else {
-    res.status(404).send('Animation or frame not found');
+
+  } catch (error) {
+    console.error('Error fetching frame:', error);
+    res.status(500).send('Internal Server Error');
   }
 });
+
+function objectToArray(frameObject) {
+  const arrayLength = Object.keys(frameObject).length / 3; // Assuming each pixel has R, G, B
+  let frameArray = [];
+
+  for (let i = 0; i < arrayLength; i++) {
+    frameArray.push(frameObject[String(i * 3)]);
+    frameArray.push(frameObject[String(i * 3 + 1)]);
+    frameArray.push(frameObject[String(i * 3 + 2)]);
+  }
+
+  return frameArray;
+}
 
 // POST request to replace the state of animations
 // this will update the order document
 // this will also update the animation documents or create new ones if not exists
-app.post('/data', (req, res) => {
-  console.log('POST request recieved for "/data"');
+app.post('/data', async (req, res) => {
+  console.log('POST request received for "/data"');
 
   // verify body of post request is valid format
   const newAnimationState = req.body;
@@ -140,32 +178,47 @@ app.post('/data', (req, res) => {
     return;
   }
 
-  console.log('Incoming data has passed inspection. First entry:');
+  console.log(`Incoming data has passed inspection. Received ${newAnimationState.length} animations.`);
+  console.log('First animation:');
   console.log('ID: ' + newAnimationState[0].animationID);
   console.log('Frame duration: ' + newAnimationState[0].frameDuration);
   console.log('Repeat count: ' + newAnimationState[0].repeatCount);
   console.log('Frame count: ' + newAnimationState[0].frames.length);
 
-  animationCache.animationList = newAnimationState;
-
   // grab the current order of the animations
-  const newOrder = [];
-  for (let i = 0; i < animationCache.animationList.length; i++) {
-    newOrder.push(animationCache.animationList[i].animationID);
+  const newMetadata = [];
+  const newAnimationData = new Map();
+  for (let i = 0; i < newAnimationState.length; i++) {
+    const currentAnimation = newAnimationState[i];
+    const animationID = currentAnimation.animationID;
+    const current = {
+      animationID: animationID,
+      frameDuration: currentAnimation.frameDuration,
+      repeatCount: currentAnimation.repeatCount,
+      totalFrames: currentAnimation.frames.length
+    }
+    newMetadata.push(current);
+    for (let j = 0; j < currentAnimation.frames.length; j++) {
+      const frameObject = currentAnimation.frames[j]; // The object you're showing
+      const frameArray = objectToArray(frameObject); // Convert it to an array
+      newAnimationData.set({ ID: animationID, index: j }, frameArray);
+    }
   }
-  metadataCache = newOrder;
+  metadataCache = newMetadata;
+  animationCache = newAnimationData;
 
-  // update database
-  metadataOperations.replaceMetadataArray(metadataCache).then(() => {
-    updateAnimationsInMongo();
-  }).catch(err => {
-    console.error(err);
+  try {
+    // update database with new metadata and animations
+    await Promise.all([
+      metadataOperations.replaceMetadataArray(metadataCache),
+      pushAnimationCacheToMongo()
+    ]);
+    console.log('Sent to MongoDB with no errors');
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('Error pushing data to mongo:', err);
     res.sendStatus(501);
-    return;
-  });
-  res.sendStatus(200);
-  console.log('Sent to MongoDB with no errors');
-  return;
+  }
 });
 
 /**

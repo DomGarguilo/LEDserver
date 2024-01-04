@@ -49,7 +49,7 @@ class AnimationContainer extends Component {
                     {(provided, snapshot) => (
                         <div ref={provided.innerRef} style={getWholeBoxStyle(snapshot.isDraggingOver)} >
                             {this.props.animationDataList.map((animationData, index) => (
-                                <WholeBox animationData={animationData} index={index} removeFromAnimationList={this.props.removeFromAnimationList} key={animationData.name} />
+                                <WholeBox animationData={animationData} index={index} removeFromAnimationList={this.props.removeFromAnimationList} key={animationData.animationID} />
                             ))}
                             {provided.placeholder}
                         </div>

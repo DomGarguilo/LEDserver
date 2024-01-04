@@ -1,12 +1,17 @@
 const Frame = require('./schemas/frame-schema');
 
+/**
+ * @returns the array of RGB values for the given frame as it is stored in the database
+ * @throws an error if the frame is not found
+ */
 const fetchFrame = async (animationID, frameNumber) => {
     try {
-        const frame = await Frame.findOne({ animationID, frameNumber });
+        const frame = await Frame.findOne({ animationID, frameNumber }, 'rgbValues -_id');
         if (!frame) {
-            throw new Error('Frame not found');
+            console.error(`Frame not found for Animation ID: ${animationID}, Frame Number: ${frameNumber}`);
+            return null;
         }
-        return frame;
+        return frame.rgbValues;
     } catch (error) {
         console.error('Error fetching frame:', error);
         throw error;

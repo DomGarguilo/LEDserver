@@ -66,11 +66,14 @@ export const assertTrue = (condition, message) => {
 }
 
 export const arraysOrderAreEqual = (a, b) => {
-    if (!Array.isArray(a) || !Array.isArray(b))
-        throw new TypeError("Either one or both parameters is not an Array");
+    if (!(a instanceof Array || a instanceof Uint8Array) ||
+        !(b instanceof Array || b instanceof Uint8Array)) {
+        console.warn("One or both arguments are not arrays or typed arrays:", a, b);
+        return false;
+    }
 
     return a.length === b.length && a.every((v, i) => v === b[i]);
-}
+};
 
 // converts a 1D array to a 2D array
 // hardcoded 256 1D array -> 16x16 2D array

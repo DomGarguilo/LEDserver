@@ -163,5 +163,5 @@ function getRGBArray(imageData) {
         result.push(data[i + 2]);
     }
     assertTrue(result.length === FRAME_PIXEL_COUNT * 3, "Unexpected array size in uploadImage");
-    return result;
+    return new Uint8Array(result);
 }
