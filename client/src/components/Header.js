@@ -41,7 +41,7 @@ class Header extends Component {
             var hexArraySet = [];
             for (let img of imgArray) {
                 const imgData = getImageData(img)
-                const hexArray = getHexArray(imgData);
+                const hexArray = getRGBArray(imgData);
                 hexArraySet.push(hexArray);
             }
             // set the hex color arrays to state
@@ -77,7 +77,7 @@ class Header extends Component {
             return;
         }
         const newAnimation = {
-            name: 'ID' + new Date().getTime(),
+            animationID: 'ID' + new Date().getTime(),
             frameDuration: 500,
             repeatCount: 3,
             frames: this.state.frames
@@ -151,29 +151,17 @@ function getImageData(img) {
 }
 
 
-// converts image data from a canvas into a hex color array
-function getHexArray(imageData) {
+// Converts image data from a canvas into an RGB color array
+function getRGBArray(imageData) {
     const data = imageData.data;
     assertTrue((data.length / 4) === FRAME_PIXEL_COUNT, "Unexpected data size in uploadImage");
     var result = new Array(0);
     for (let i = 0; i < data.length; i += 4) {
-        const red = data[i];
-        const green = data[i + 1];
-        const blue = data[i + 2];
-        // const alpha = data[i + 3]; ignore alpha value
-        result.push(rgbToHex(red, green, blue));
+        // Add the RGB array to the result
+        result.push(data[i]);
+        result.push(data[i + 1]);
+        result.push(data[i + 2]);
     }
-    assertTrue(result.length === FRAME_PIXEL_COUNT, "Unexpected array size in uploadImage");
+    assertTrue(result.length === FRAME_PIXEL_COUNT * 3, "Unexpected array size in uploadImage");
     return result;
-}
-
-// converts a set of r, g and b values to its hex equivalent
-function rgbToHex(r, g, b) {
-    return "0x" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-}
-
-// converts an r, g or b value to its hex equivalent
-function componentToHex(c) {
-    var hex = c.toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
 }
