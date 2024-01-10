@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 const RED_LED = [0xFF, 0x00, 0x00];
 const GREEN_LED = [0x00, 0xFF, 0x00];
 const BLUE_LED = [0x00, 0x00, 0xFF];
@@ -45,19 +47,22 @@ const metadata = [
       "animationID": "anim1",
       "frameDuration": 500,
       "repeatCount": 3,
-      "totalFrames": 4
+      "totalFrames": 4,
+      "frameOrder": [uuidv4(), uuidv4(), uuidv4(), uuidv4()]
     },
     {
       "animationID": "anim2",
       "frameDuration": 300,
       "repeatCount": 2,
-      "totalFrames": 5
+      "totalFrames": 5,
+      "frameOrder": [uuidv4(), uuidv4(), uuidv4(), uuidv4(), uuidv4()]
     },
     {
       "animationID": "anim3",
       "frameDuration": 200,
       "repeatCount": 4,
-      "totalFrames": 3
+      "totalFrames": 3,
+      "frameOrder": [uuidv4(), uuidv4(), uuidv4()]
     }
   ];
 

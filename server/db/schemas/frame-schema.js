@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 
 const rgbValueLength = 768; // 256 pixels * 3 RGB values per pixel
 
@@ -7,8 +8,9 @@ const FrameSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    frameNumber: {
-        type: Number,
+    frameID: {
+        type: String,
+        default: uuidv4,
         required: true
     },
     rgbValues: {

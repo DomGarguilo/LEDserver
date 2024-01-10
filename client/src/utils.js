@@ -142,12 +142,11 @@ export const fetchMetadataFromServer = async () => {
 }
 
 /**
- * @param {String} animationID the animation to fetch from
- * @param {*} frameNum the frame number to fetch
+ * @param {*} frameID the unique ID of the frame to fetch
  * @returns the frame data as a Uint8Array from the server
  */
-export const fetchFrameDataFromServer = async (animationID, frameNum) => {
-    const endpoint = SERVER_ROOT_URL + `frameData/${animationID}/${frameNum}`;
+export const fetchFrameDataFromServer = async (frameID) => {
+    const endpoint = SERVER_ROOT_URL + `frameData/${frameID}`;
     console.log('GET request for frame data from server. Endpoint: ' + endpoint);
     const response = await fetch(endpoint);
     if (!response.ok) {

@@ -13,8 +13,8 @@ const fetchMetadataArray = async () => {
 const replaceMetadataArray = async (newMetadataArray) => {
     try {
         const updatedDocument = await MetadataArray.findOneAndUpdate(
-            {}, 
-            { metadataArray: newMetadataArray }, 
+            {},
+            { metadataArray: newMetadataArray },
             { upsert: true, new: true }
         );
         return updatedDocument;

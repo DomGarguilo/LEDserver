@@ -14,6 +14,7 @@ class App extends Component {
     this.removeFromAnimationList = this.removeFromAnimationList.bind(this);
     this.sendStateToServer = this.sendStateToServer.bind(this);
 
+    //TODO need to create and track order of Frame IDS along with this
     this.state = { animationList: [] };
   }
 
@@ -24,7 +25,8 @@ class App extends Component {
     const animationsWithFrames = await Promise.all(metadataList.map(async (animationMetadata) => {
       let frames = [];
       for (let i = 0; i < animationMetadata.totalFrames; i++) {
-        const frameData = await fetchFrameDataFromServer(animationMetadata.animationID, i);
+        const frameId = animationMetadata.frameOrder[i];
+        const frameData = await fetchFrameDataFromServer(frameId);
         frames.push(frameData);
       }
       return { ...animationMetadata, frames };

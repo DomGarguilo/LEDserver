@@ -5,6 +5,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const favicon = require('serve-favicon');
+
 const connectToMongo = require('./db/connectToMongo');
 const testData = require('./test/testData');
 const animationOperations = require('./db/animationOperations');
@@ -25,16 +26,23 @@ const connectToDbAndInitCache = async () => {
 
     const metadata = await metadataOperations.fetchMetadataArray();
     if (metadata.length === 0) {
-      console.log('No metadata found in database. Inserting new test metadata array');
+      console.log('No metadata found in database. Inserting new test metadata array:');
+
+      // Insert metadata into the database
       await metadataOperations.replaceMetadataArray(testData.metadata);
+
+      // Fetch the metadata from the database again to get the inserted IDs
+      metadataCache = await metadataOperations.fetchMetadataArray();
+
       console.log('Inserting accompanying test animations');
-      console.log('Animations: ' + testData.animations);
-      for (let i = 0; i < testData.metadata.length; i++) {
-        const currentMetadata = testData.metadata[i];
+      for (let i = 0; i < metadataCache.length; i++) {
+        const currentMetadata = metadataCache[i];
+        console.log(`Inserting animation ${currentMetadata.animationID}`);
         for (let j = 0; j < currentMetadata.totalFrames; j++) {
           const frameData = testData.animations[currentMetadata.animationID][j];
-          await animationOperations.insertFrame(currentMetadata.animationID, j, frameData);
-          console.log(await animationOperations.fetchFrame(currentMetadata.animationID, j));
+          const frameID = currentMetadata.frameOrder[j]
+          console.log(`Inserting frame with ID ${frameID} into animation ${currentMetadata.animationID}`);
+          await animationOperations.insertFrame(currentMetadata.animationID, frameID, frameData);
         }
       }
     } else {
@@ -46,9 +54,10 @@ const connectToDbAndInitCache = async () => {
       const currentMetadata = metadataCache[i];
       console.log('looking for animation ' + currentMetadata.animationID);
       for (let j = 0; j < currentMetadata.totalFrames; j++) {
-        const frameData = await animationOperations.fetchFrame(currentMetadata.animationID, j);
+        const currentFrameID = currentMetadata.frameOrder[j];
+        const frameData = await animationOperations.fetchFrame(currentFrameID);
         assertTrue(frameData !== 'undefined', 'Could not find animation for name: ' + currentMetadata.animationID + ' and frame number: ' + j);
-        animationCache.set({ ID: currentMetadata.animationID, index: j }, frameData);
+        animationCache.set(currentFrameID, { data: frameData, animationID: currentMetadata.animationID });
         console.log('Added frame ' + j + ' to animation ' + currentMetadata.animationID);
       }
     }
@@ -58,13 +67,14 @@ const connectToDbAndInitCache = async () => {
 
 // Insert all frames in animation cache into mongo
 const pushAnimationCacheToMongo = async () => {
-  for (let [key, frameData] of animationCache.entries()) {
-    const animationID = key.ID;
-    const frameNumber = key.index;
+  for (let [key, value] of animationCache.entries()) {
+    const frameID = key;
+    const animationID = value.animationID;
+    const frameData = value.data;
     try {
-      await animationOperations.insertFrame(animationID, frameNumber, frameData);
+      await animationOperations.insertFrame(animationID, frameID, frameData);
     } catch (error) {
-      console.error(`Error inserting frame ${frameNumber} for animation ${animationID}:`, error);
+      console.error(`Error inserting frame ${frameID} for animation ${animationID}:`, error);
     }
   }
 };
@@ -111,32 +121,17 @@ app.get('/metadata', (req, res) => {
 });
 
 // Endpoint to fetch a specific frame of an animation
-app.get('/frameData/:animationId/:frameNumber', async (req, res) => {
-  const animationId = req.params.animationId;
-  if (!animationId) {
-    return res.status(400).send('Animation ID is required.');
-  }
-
-  const frameNumber = parseInt(req.params.frameNumber);
-  if (isNaN(frameNumber)) {
-    return res.status(400).send('Frame number must be a valid number.');
+app.get('/frameData/:frameId', async (req, res) => {
+  const frameId = req.params.frameId;
+  if (!frameId) {
+    return res.status(400).send('Frame ID is required.');
   }
 
   try {
-    const animationMetadata = metadataCache.find(metadata => metadata.animationID === animationId);
-    if (!animationMetadata) {
-      console.error(`Animation ID ${animationId} not found.`);
-      return res.status(404).send('Animation ID not found.');
-    }
-
-    if (frameNumber < 0 || frameNumber >= animationMetadata.totalFrames) {
-      console.error(`Frame number ${frameNumber} is out of range for animation ${animationId}.`);
-      return res.status(400).send('Frame number is out of range.');
-    }
-
-    const frame = await animationOperations.fetchFrame(animationId, frameNumber);
+    // Fetch the frame data using the frame ID
+    const frame = await animationOperations.fetchFrame(frameId);
     if (!frame) {
-      console.error(`Could not find frame ${frameNumber} for animation ${animationId}`);
+      console.error(`Could not find frame with ID ${frameId}`);
       return res.status(404).send('Frame not found.');
     }
 
@@ -199,9 +194,10 @@ app.post('/data', async (req, res) => {
     }
     newMetadata.push(current);
     for (let j = 0; j < currentAnimation.frames.length; j++) {
-      const frameObject = currentAnimation.frames[j]; // The object you're showing
-      const frameArray = objectToArray(frameObject); // Convert it to an array
-      newAnimationData.set({ ID: animationID, index: j }, frameArray);
+      const frameObject = currentAnimation.frames[j];
+      const frameArray = objectToArray(frameObject);
+      // need to send the frame ID from the client to here
+      newAnimationData.set(frameID, { animationID: animationID, data: frameArray });
     }
   }
   metadataCache = newMetadata;
