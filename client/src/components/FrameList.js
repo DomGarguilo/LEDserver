@@ -9,7 +9,7 @@ class FrameList extends PureComponent {
         console.log('rendering FrameList');
         return (
             <>
-                <Droppable droppableId={`droppable${this.props.animationData.name}`} type={`${this.props.animationIndex}`} direction="horizontal">
+                <Droppable droppableId={`droppable${this.props.animationData.animationID}`} type={`${this.props.animationIndex}`} direction="horizontal">
                     {(provided, snapshot) => (
                         <div ref={provided.innerRef} style={getFrameListStyle(snapshot.isDraggingOver)}>
                             {this.props.animationData.frames.map((frame, index) => {

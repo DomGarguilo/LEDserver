@@ -1,7 +1,7 @@
 import { Component } from "react";
 import Header from './components/Header';
 import AnimationContainer from './components/AnimationContainer';
-import { getDataFromServer, post } from 'utils';
+import { fetchMetadataFromServer, fetchFrameDataFromServer, post } from 'utils';
 
 import './App.css';
 
@@ -14,13 +14,27 @@ class App extends Component {
     this.removeFromAnimationList = this.removeFromAnimationList.bind(this);
     this.sendStateToServer = this.sendStateToServer.bind(this);
 
+    //TODO need to create and track order of Frame IDS along with this
     this.state = { animationList: [] };
   }
 
   // wait for component to mount before pulling data and setting its state
   async componentDidMount() {
-    const data = await getDataFromServer();
-    this.setState({ animationList: data.animationList });
+    const metadataList = await fetchMetadataFromServer();
+
+    const animationsWithFrames = await Promise.all(metadataList.map(async (animationMetadata) => {
+      let frames = [];
+      for (let i = 0; i < animationMetadata.totalFrames; i++) {
+        const frameId = animationMetadata.frameOrder[i];
+        const frameData = await fetchFrameDataFromServer(frameId);
+        frames.push(frameData);
+      }
+      return { ...animationMetadata, frames };
+    }));
+
+    console.log(animationsWithFrames);
+
+    this.setState({ animationList: animationsWithFrames });
   }
 
   // helper function to set state from child component
@@ -39,7 +53,7 @@ class App extends Component {
   removeFromAnimationList = (animationToDelete) => {
     this.setState({
       animationList: this.state.animationList.filter(function (animation) {
-        return animation.name !== animationToDelete;
+        return animation.animationID !== animationToDelete;
       })
     });
   }

@@ -21,14 +21,14 @@ const WholeBox = (props) => {
     };
 
     return (
-        <Draggable key={animationData.name} draggableId={animationData.name} index={index} isDragDisabled={false}>
+        <Draggable key={animationData.animationID} draggableId={animationData.animationID} index={index} isDragDisabled={false}>
             {(provided, snapshot) => (
                 <span {...provided.dragHandleProps}>
                     <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
                         <Animation data={animationData} />
                         <FrameList animationData={animationData} animationIndex={index} dragSwitch={value} />
-                        <Switch isOn={value} handleToggle={() => setValue(!value)} name={animationData.name} />
-                        <img src={trashIcon} width={26} height={39} style={trashIconStyle} onClick={() => removeFromAnimationList(animationData.name)} alt="trashbin" />
+                        <Switch isOn={value} handleToggle={() => setValue(!value)} name={animationData.animationID} />
+                        <img src={trashIcon} width={26} height={39} style={trashIconStyle} onClick={() => removeFromAnimationList(animationData.animationID)} alt="trashbin" />
                     </div>
                 </span>
             )}

@@ -5,13 +5,14 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const favicon = require('serve-favicon');
-const mongo = require('./mongo');
-const animationSchema = require('./schemas/animation-schema');
-const orderSchema = require('./schemas/order-schema');
 
-// might be able to make this just an array to avoid calling .animationList
-let animationCache = { animationList: [] };
-let orderCache = [];
+const connectToMongo = require('./db/connectToMongo');
+const testData = require('./test/testData');
+const animationOperations = require('./db/animationOperations');
+const metadataOperations = require('./db/metadataOperations');
+
+let animationCache = new Map(); // map of animationID + frameNumber to frame data
+let metadataCache = [];
 
 /**
  * 
@@ -19,86 +20,67 @@ let orderCache = [];
  * 
  */
 
-// This initializes the animation and order cache from MongoDB
-const connectToMongoDB = async () => {
-  await mongo().then(async mongoose => {
-    try {
-      console.log('Initializing animation cache from database');
+const connectToDbAndInitCache = async () => {
+  await connectToMongo().then(async () => {
+    console.log('Initializing animation cache from database');
 
-      // get order array
-      const orderData = await orderSchema.find({}, { _id: 0 });
-      try {
-        orderCache = orderData[0].order;
-      } catch (error) {
-        if (error instanceof TypeError) { // collection does not exist
-          orderCache = [];
-          const newOrder = new orderSchema({ order: [] });
-          newOrder.save(function (err, doc) {
-            console.log('new order arr added to db: ' + doc._id);
-          })
-        } else {
-          throw error;
+    const metadata = await metadataOperations.fetchMetadataArray();
+    if (metadata.length === 0) {
+      console.log('No metadata found in database. Inserting new test metadata array:');
+
+      // Insert metadata into the database
+      await metadataOperations.replaceMetadataArray(testData.metadata);
+
+      // Fetch the metadata from the database again to get the inserted IDs
+      metadataCache = await metadataOperations.fetchMetadataArray();
+
+      console.log('Inserting accompanying test animations');
+      for (let i = 0; i < metadataCache.length; i++) {
+        const currentMetadata = metadataCache[i];
+        console.log(`Inserting animation ${currentMetadata.animationID}`);
+        for (let j = 0; j < currentMetadata.totalFrames; j++) {
+          const frameData = testData.animations[currentMetadata.animationID][j];
+          const frameID = currentMetadata.frameOrder[j]
+          console.log(`Inserting frame with ID ${frameID} into animation ${currentMetadata.animationID}`);
+          await animationOperations.insertFrame(currentMetadata.animationID, frameID, frameData);
         }
       }
+    } else {
+      metadataCache = metadata;
+    }
 
-      // get all animation data an insert it in the order specified by the order array
-      for (let i = 0; i < orderCache.length; i++) {
-        const currentName = orderCache[i];
-        console.log('looking for ' + currentName)
-        const animation = await animationSchema.find({ name: currentName }, { _id: 0 });
-        assertTrue(animation !== 'undefined', 'Could not find animation for name: ' + currentName);
-        assertTrue(verifyAnimationJson([animation]), 'New animation bad format: ' + animation);
-        animationCache.animationList.push(animation[0]);
+    // initialize animation cache based on metadata
+    for (let i = 0; i < metadataCache.length; i++) {
+      const currentMetadata = metadataCache[i];
+      console.log('looking for animation ' + currentMetadata.animationID);
+      for (let j = 0; j < currentMetadata.totalFrames; j++) {
+        const currentFrameID = currentMetadata.frameOrder[j];
+        const frameData = await animationOperations.fetchFrame(currentFrameID);
+        assertTrue(frameData !== 'undefined', 'Could not find animation for name: ' + currentMetadata.animationID + ' and frame number: ' + j);
+        animationCache.set(currentFrameID, { data: frameData, animationID: currentMetadata.animationID });
+        console.log('Added frame ' + j + ' to animation ' + currentMetadata.animationID);
       }
-      assertTrue(orderCache.length === animationCache.animationList.length);
-    } finally {
-      //mongoose.connection.close();
     }
+    console.log('Animation cache initialized.');
   });
 }
 
-// Updates the order document with what is currently in order cache
-const updateOrderInMongo = async () => {
-  await mongo().then(async mongoose => {
+// Insert all frames in animation cache into mongo
+const pushAnimationCacheToMongo = async () => {
+  for (let [key, value] of animationCache.entries()) {
+    const frameID = key;
+    const animationID = value.animationID;
+    const frameData = value.data;
     try {
-      console.log('Updating order');
-
-      await orderSchema.updateOne({}, {
-        order: orderCache
-      });
-    } finally {
-      //mongoose.connection.close;
+      await animationOperations.insertFrame(animationID, frameID, frameData);
+    } catch (error) {
+      console.error(`Error inserting frame ${frameID} for animation ${animationID}:`, error);
     }
-  });
-}
+  }
+};
 
-// Updates animations documents or creates new ones
-const updateAnimationsInMongo = async () => {
-  await mongo().then(async mongoose => {
-    try {
-      console.log('Updating or adding animations');
-      const options = { upsert: true, new: true, setDefaultsOnInsert: true };
 
-      const animationList = animationCache.animationList;
-      assertTrue(verifyAnimationJson(animationList), 'Animation list has bad format. Not interting into DB: ' + animationList);
-
-      for (let i = 0; i < animationList.length; i++) {
-        const currentAnimation = animationList[i];
-        let query = { name: currentAnimation.name };
-        let update = {
-          frameDuration: currentAnimation.frameDuration,
-          repeatCount: currentAnimation.repeatCount,
-          frames: currentAnimation.frames
-        };
-        await animationSchema.findOneAndUpdate(query, update, options);
-      }
-    } finally {
-      //mongoose.connection.close;
-    }
-  });
-}
-
-connectToMongoDB();
+connectToDbAndInitCache();
 
 /**
  * 
@@ -134,18 +116,53 @@ app.get('/ping', (req, res) => {
   return;
 });
 
-// GET request for the animation-data json
-app.get('/data', (req, res) => {
-  console.log('Handling GET request for "/data"');
-  res.json(animationCache);
-  return;
+app.get('/metadata', (req, res) => {
+  res.send(metadataCache);
 });
+
+// Endpoint to fetch a specific frame of an animation
+app.get('/frameData/:frameId', async (req, res) => {
+  const frameId = req.params.frameId;
+  if (!frameId) {
+    return res.status(400).send('Frame ID is required.');
+  }
+
+  try {
+    // Fetch the frame data using the frame ID
+    const frame = await animationOperations.fetchFrame(frameId);
+    if (!frame) {
+      console.error(`Could not find frame with ID ${frameId}`);
+      return res.status(404).send('Frame not found.');
+    }
+
+    const buffer = Buffer.from(frame);
+    res.contentType('application/octet-stream');
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('Error fetching frame:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+function objectToArray(frameObject) {
+  const arrayLength = Object.keys(frameObject).length / 3; // Assuming each pixel has R, G, B
+  let frameArray = [];
+
+  for (let i = 0; i < arrayLength; i++) {
+    frameArray.push(frameObject[String(i * 3)]);
+    frameArray.push(frameObject[String(i * 3 + 1)]);
+    frameArray.push(frameObject[String(i * 3 + 2)]);
+  }
+
+  return frameArray;
+}
 
 // POST request to replace the state of animations
 // this will update the order document
 // this will also update the animation documents or create new ones if not exists
-app.post('/data', (req, res) => {
-  console.log('POST request recieved for "/data"');
+app.post('/data', async (req, res) => {
+  console.log('POST request received for "/data"');
 
   // verify body of post request is valid format
   const newAnimationState = req.body;
@@ -156,33 +173,48 @@ app.post('/data', (req, res) => {
     return;
   }
 
-  console.log('Incoming data has passed inspection. First entry:');
-  console.log('ID: ' + newAnimationState[0].name);
+  console.log(`Incoming data has passed inspection. Received ${newAnimationState.length} animations.`);
+  console.log('First animation:');
+  console.log('ID: ' + newAnimationState[0].animationID);
   console.log('Frame duration: ' + newAnimationState[0].frameDuration);
   console.log('Repeat count: ' + newAnimationState[0].repeatCount);
   console.log('Frame count: ' + newAnimationState[0].frames.length);
 
-  animationCache.animationList = newAnimationState;
-
   // grab the current order of the animations
-  const newOrder = [];
-  for (let i = 0; i < animationCache.animationList.length; i++) {
-    newOrder.push(animationCache.animationList[i].name);
+  const newMetadata = [];
+  const newAnimationData = new Map();
+  for (let i = 0; i < newAnimationState.length; i++) {
+    const currentAnimation = newAnimationState[i];
+    const animationID = currentAnimation.animationID;
+    const current = {
+      animationID: animationID,
+      frameDuration: currentAnimation.frameDuration,
+      repeatCount: currentAnimation.repeatCount,
+      totalFrames: currentAnimation.frames.length
+    }
+    newMetadata.push(current);
+    for (let j = 0; j < currentAnimation.frames.length; j++) {
+      const frameObject = currentAnimation.frames[j];
+      const frameArray = objectToArray(frameObject);
+      // need to send the frame ID from the client to here
+      newAnimationData.set(frameID, { animationID: animationID, data: frameArray });
+    }
   }
-  orderCache = newOrder;
+  metadataCache = newMetadata;
+  animationCache = newAnimationData;
 
-  // update database
   try {
-    updateOrderInMongo();
-    updateAnimationsInMongo();
+    // update database with new metadata and animations
+    await Promise.all([
+      metadataOperations.replaceMetadataArray(metadataCache),
+      pushAnimationCacheToMongo()
+    ]);
+    console.log('Sent to MongoDB with no errors');
+    res.sendStatus(200);
   } catch (err) {
-    console.error(err);
+    console.error('Error pushing data to mongo:', err);
     res.sendStatus(501);
-    return;
   }
-  res.sendStatus(200);
-  console.log('Sent to MongoDB with no errors');
-  return;
 });
 
 /**
@@ -197,7 +229,7 @@ function verifyAnimationJson(input) {
   input.forEach(animation => {
     try {
       assertTrue(animation != null && animation != undefined, 'given var is null');
-      assertTrue(animation.name != undefined, 'name is undefined');
+      assertTrue(animation.animationID != undefined, 'name is undefined');
       assertTrue(animation.frameDuration != undefined, 'frame duration is undefined');
       assertTrue(animation.repeatCount != undefined, 'repeat count is undefined');
       assertTrue(animation.frames != undefined, 'frame list is undefined');

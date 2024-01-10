@@ -66,20 +66,24 @@ export const assertTrue = (condition, message) => {
 }
 
 export const arraysOrderAreEqual = (a, b) => {
-    if (!Array.isArray(a) || !Array.isArray(b))
-        throw new TypeError("Either one or both parameters is not an Array");
+    if (!(a instanceof Array || a instanceof Uint8Array) ||
+        !(b instanceof Array || b instanceof Uint8Array)) {
+        console.warn("One or both arguments are not arrays or typed arrays:", a, b);
+        return false;
+    }
 
     return a.length === b.length && a.every((v, i) => v === b[i]);
-}
+};
 
 // converts a 1D array to a 2D array
 // hardcoded 256 1D array -> 16x16 2D array
 export const get2Darray = (arr) => {
-    assertTrue(arr.length === FRAME_PIXEL_COUNT, 'Array length needs to be 256');
+    assertTrue(arr.length === FRAME_PIXEL_COUNT * 3, 'Array length needs to be 256*3');
     let result = Array.from(Array(IMAGE_PIXEL_LENGTH), () => new Array(IMAGE_PIXEL_LENGTH));
     for (let i = 0; i < IMAGE_PIXEL_LENGTH; i++) {
         for (let j = 0; j < IMAGE_PIXEL_LENGTH; j++) {
-            result[i][j] = arr[(j * IMAGE_PIXEL_LENGTH) + i];
+            let index = 3 * ((i * IMAGE_PIXEL_LENGTH) + j);
+            result[i][j] = [arr[index], arr[index + 1], arr[index + 2]];
         }
     }
     return result;
@@ -125,13 +129,70 @@ export const post = async (data, path) => {
     }
 }
 
-// fetches the image data json from server
-// comes in array of hex color vals so other functions convert it to css-acceptable code
-export const getDataFromServer = async () => {
-    const endpoint = SERVER_ROOT_URL + 'data';
+export const fetchMetadataFromServer = async () => {
+    const endpoint = SERVER_ROOT_URL + 'metadata';
+    console.log('GET request for metadata from server. Endpoint: ' + endpoint);
     const response = await fetch(endpoint);
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
+    console.log('Metadata received: ' + JSON.stringify(data));
     return data;
+}
+
+/**
+ * @param {*} frameID the unique ID of the frame to fetch
+ * @returns the frame data as a Uint8Array from the server
+ */
+export const fetchFrameDataFromServer = async (frameID) => {
+    const endpoint = SERVER_ROOT_URL + `frameData/${frameID}`;
+    console.log('GET request for frame data from server. Endpoint: ' + endpoint);
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    if (response.headers.get("Content-Type") === "application/octet-stream") {
+        const buffer = await response.arrayBuffer();
+        console.log('Frame data received as binary');
+        // Process the binary data as needed for your application
+        return new Uint8Array(buffer);
+    } else {
+        throw new Error('Unexpected content type');
+    }
+}
+
+// Assuming each pixel's data is 3 bytes (1 byte for red, 1 for green, 1 for blue)
+export const parseFrameData = (buffer) => {
+    const frameData = new Uint8Array(buffer);
+    const pixels = [];
+    for (let i = 0; i < frameData.length; i += 3) {
+        pixels.push([frameData[i], frameData[i + 1], frameData[i + 2]]);
+    }
+    return pixels; // Returns an array of [R, G, B] values
+}
+
+export const convertUint8ArrayToHexColorArray = (uint8Array) => {
+    // Ensure the array has a length that is a multiple of 3
+    if (uint8Array.length % 3 !== 0) {
+        throw new Error("The length of the Uint8Array should be a multiple of 3.");
+    }
+
+    const hexColorArray = [];
+    for (let i = 0; i < uint8Array.length; i += 3) {
+        // Extract RGB values
+        const r = uint8Array[i];
+        const g = uint8Array[i + 1];
+        const b = uint8Array[i + 2];
+
+        // Convert RGB values to a hex string and add to the array
+        hexColorArray.push(rgbToHex(r, g, b));
+    }
+    return hexColorArray;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
 //fetches the list of animation order from the server
