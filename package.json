@@ -8,7 +8,7 @@
     "postbuild": "npm install && cd client && npm install && npm run build && rm -rf ../server/build && mv ./build ../server/build && cd ../server && npm install",
     "heroku-postbuild": "npm run postbuild",
     "start": "node ./server/server",
-    "dev": "nodemon server/server.js"
+    "dev": "nodemon server/server.ts"
   },
   "author": "",
   "license": "ISC",

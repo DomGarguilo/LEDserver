@@ -117,7 +117,7 @@ export const post = async (data, path) => {
             body: JSON.stringify(data)
         }
         const response = await fetch(path, config);
-        console.log("POSTRRR " + response);
+
         if (response.ok) {
             // maybe maybe this a callback to refresh
             return response;

@@ -32,8 +32,6 @@ class App extends Component {
       return { ...animationMetadata, frames };
     }));
 
-    console.log(animationsWithFrames);
-
     this.setState({ animationList: animationsWithFrames });
   }
 
