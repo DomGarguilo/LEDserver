@@ -1,10 +1,5 @@
-import { Frame } from "./Frame";
-import { Metadata } from "./Metadata";
 import { v4 as uuidv4 } from 'uuid';
-
 import express, { Request, Response } from 'express';
-const app = express();
-const port = process.env.PORT || 5000;
 import path from 'path';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -14,6 +9,11 @@ import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
 import { fetchFrame, insertFrame } from './db/animationOperations';
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
+import { Frame } from "./Frame";
+import { Metadata } from "./Metadata";
+
+const app = express();
+const port = process.env.PORT || 5000;
 
 let animationCache: Set<Frame> = new Set();
 let metadataCache: Metadata[] = [];
@@ -94,13 +94,14 @@ connectToDbAndInitCache();
  */
 
 app.use(cors());
-
-// Use these files as static files (meaning send these to the user as-is to their browser)
-app.use('/', express.static(path.join(__dirname, 'build')));
-
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(favicon(path.join(__dirname, 'build', 'favicon.ico')));
+
+const clientBuildPath: string = path.join(__dirname, '../../client/build');
+
+// Serve static files from the React app build directory
+app.use(express.static(clientBuildPath));
+app.use(favicon(path.join(clientBuildPath, 'favicon.ico')));
 
 // listen at specified port
 app.listen(port, () => {
@@ -109,9 +110,7 @@ app.listen(port, () => {
 
 // landing page
 app.get('/', (req: Request, res: Response) => {
-  console.log('Handling GET request for "/". Sending index.html');
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-  return;
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
 // test get request, returns 'pong'
@@ -123,7 +122,7 @@ app.get('/ping', (req: Request, res: Response) => {
 
 app.get('/metadata', (req: Request, res: Response) => {
   console.log('Handling GET request for "/metadata"');
-  res.send(metadataCache);
+  res.json(metadataCache);
 });
 
 // Endpoint to fetch a specific frame of an animation
@@ -229,6 +228,11 @@ app.post('/data', async (req, res) => {
     console.error('Error pushing data to mongo:', err);
     res.sendStatus(501);
   }
+});
+
+// Catch-all handler for any request that doesn't match the above
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
 /**

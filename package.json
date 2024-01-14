@@ -2,13 +2,14 @@
   "name": "ledserver",
   "version": "1.0.0",
   "description": "This repo is split into a client side and server side.  The client side consists of a react frontend.  The server side consists of a Node express backend.",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postbuild": "npm install && cd client && npm install && npm run build && rm -rf ../server/build && mv ./build ../server/build && cd ../server && npm install",
-    "heroku-postbuild": "npm run postbuild",
-    "start": "node ./server/server",
-    "dev": "nodemon server/server.ts"
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\"",
+    "dev-server": "nodemon server/server.ts",
+    "dev-client": "cd client && npm start",
+    "build": "npm run build-server && npm run build-client",
+    "build-server": "cd server && npm run build",
+    "build-client": "cd client && npm run build",
+    "start": "node server/build/server.js"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +17,7 @@
     "dotenv": "^16.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.19"
+    "nodemon": "^2.0.19",
+    "concurrently": "^6.0.0"
   }
 }
