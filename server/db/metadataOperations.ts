@@ -1,6 +1,10 @@
-const MetadataArray = require('./schemas/metadata-schema');
+import { Metadata } from "../Metadata";
+import MetadataArray from './schemas/metadata-schema';
 
-const fetchMetadataArray = async () => {
+/**
+ * @returns {Promise<Metadata[]>} The metadata array from the database
+ */
+const fetchMetadataArray = async (): Promise<Metadata[]> => {
     try {
         const metadataArrayDocument = await MetadataArray.findOne({});
         return metadataArrayDocument ? metadataArrayDocument.metadataArray : [];
@@ -10,18 +14,20 @@ const fetchMetadataArray = async () => {
     }
 };
 
-const replaceMetadataArray = async (newMetadataArray) => {
+/**
+ * @param {Metadata[]} newMetadataArray The metadata array to replace the current one in the database
+ */
+const replaceMetadataArray = async (newMetadataArray: Metadata[]) => {
     try {
-        const updatedDocument = await MetadataArray.findOneAndUpdate(
+        MetadataArray.findOneAndUpdate(
             {},
             { metadataArray: newMetadataArray },
             { upsert: true, new: true }
         );
-        return updatedDocument;
     } catch (error) {
         console.error('Error replacing metadata array:', error);
         throw error;
     }
 };
 
-module.exports = { fetchMetadataArray, replaceMetadataArray };
+export { fetchMetadataArray, replaceMetadataArray };
