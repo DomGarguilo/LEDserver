@@ -19,14 +19,10 @@ RUN npm ci --omit=dev
 WORKDIR /app
 COPY . .
 
-# build the production react app and move it into the server dir
-WORKDIR /app/client
+# build the server and client
 RUN npm run build
-RUN rm -rf ../server/build
-RUN mv ./build ../server
 
-# move back into the root dir to start the app
-WORKDIR /app
-RUN rm -rf client/
+# remove the client source files, keep only the build
+RUN rm -rf client/src
 
 CMD ["npm", "start"]
