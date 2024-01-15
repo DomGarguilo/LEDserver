@@ -4,6 +4,7 @@ import path from 'path';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import favicon from 'serve-favicon';
+import * as fs from 'fs';
 
 import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
@@ -98,10 +99,16 @@ app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const clientBuildPath: string = path.join(__dirname, '../../client/build');
+const faviconPath: string = path.join(clientBuildPath, 'favicon.ico');
 
 // Serve static files from the React app build directory
 app.use(express.static(clientBuildPath));
-app.use(favicon(path.join(clientBuildPath, 'favicon.ico')));
+
+// Use favicon if it exists
+// at a different path for development vs production
+if (fs.existsSync(faviconPath)) {
+  app.use(favicon(faviconPath));
+}
 
 // listen at specified port
 app.listen(port, () => {
