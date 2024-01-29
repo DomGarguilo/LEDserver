@@ -1,10 +1,11 @@
-import { v4 as uuidv4 } from 'uuid';
 import express, { Request, Response } from 'express';
 import path from 'path';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import favicon from 'serve-favicon';
 import * as fs from 'fs';
+import { FRAME_ID_LENGTH } from './constants';
+import { genFrameID } from './utils';
 
 import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
@@ -32,6 +33,7 @@ const connectToDbAndInitCache = async () => {
     const metadata = await fetchMetadataArray();
     if (metadata.length === 0) {
       console.log('No metadata found in database. Inserting new test metadata array:');
+      console.log(testMetadata);
 
       // Insert metadata into the database
       await replaceMetadataArray(testMetadata);
@@ -39,6 +41,7 @@ const connectToDbAndInitCache = async () => {
       // Fetch the metadata from the database again to get the inserted IDs
       metadataCache = await fetchMetadataArray();
       console.log('Metadata inserted into database:');
+      console.log(metadataCache);
 
       console.log('Inserting accompanying test animations');
       for (let i = 0; i < metadataCache.length; i++) {
@@ -129,6 +132,12 @@ app.get('/ping', (req: Request, res: Response) => {
 
 app.get('/metadata', (req: Request, res: Response) => {
   console.log('Handling GET request for "/metadata"');
+  // check that each frame ID in the metadataCache is the correct length
+  metadataCache.forEach(metadata => {
+    metadata.frameOrder.forEach(frameID => {
+      assertTrue(frameID.length === FRAME_ID_LENGTH, 'Frame ID ' + frameID + ' is not the correct length');
+    });
+  });
   res.json(metadataCache);
 });
 
@@ -213,7 +222,7 @@ app.post('/data', async (req, res) => {
       const frameObject: { [key: string]: number } = currentAnimation.frames[j];
       const frameArray = objectToArray(frameObject);
       // need to send the frame ID from the client to here
-      const frameID = uuidv4();
+      const frameID = genFrameID(FRAME_ID_LENGTH);
       frameOrder.push(frameID);
       newAnimationData.add(new Frame(frameID, animationID, frameArray));
     }

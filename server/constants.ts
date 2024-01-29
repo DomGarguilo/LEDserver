@@ -1,0 +1,1 @@
+export const FRAME_ID_LENGTH = 16;

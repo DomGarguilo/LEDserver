@@ -19,7 +19,7 @@ const fetchMetadataArray = async (): Promise<Metadata[]> => {
  */
 const replaceMetadataArray = async (newMetadataArray: Metadata[]) => {
     try {
-        MetadataArray.findOneAndUpdate(
+        await MetadataArray.findOneAndUpdate(
             {},
             { metadataArray: newMetadataArray },
             { upsert: true, new: true }

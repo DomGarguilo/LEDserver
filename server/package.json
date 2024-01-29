@@ -11,10 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "express": "^4.17.3",
     "mongoose": "^6.3.1",
-    "serve-favicon": "^2.5.0",
-    "uuid": "^9.0.1"
+    "serve-favicon": "^2.5.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -24,7 +24,6 @@
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
     "@types/serve-favicon": "^2.5.7",
-    "@types/uuid": "^9.0.7",
     "typescript": "^5.3.3"
   }
 }
