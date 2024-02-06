@@ -138,7 +138,7 @@ export const fetchMetadataFromServer = async () => {
     }
     const data = await response.json();
     console.log('Metadata received: ' + JSON.stringify(data));
-    return data;
+    return data.metadata;
 }
 
 /**

@@ -5,7 +5,7 @@ import cors from 'cors';
 import favicon from 'serve-favicon';
 import * as fs from 'fs';
 import { FRAME_ID_LENGTH } from './constants';
-import { genFrameID } from './utils';
+import { genFrameID, hashString } from './utils';
 
 import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
@@ -19,6 +19,12 @@ const port = process.env.PORT || 5000;
 
 let animationCache: Set<Frame> = new Set();
 let metadataCache: Metadata[] = [];
+let metadataHash: string = '';
+
+const updateMetadataCacheAndHash = async (metadata: Metadata[]) => {
+  metadataCache = metadata;
+  metadataHash = hashString(JSON.stringify(metadata));
+}
 
 /**
  * 
@@ -39,7 +45,7 @@ const connectToDbAndInitCache = async () => {
       await replaceMetadataArray(testMetadata);
 
       // Fetch the metadata from the database again to get the inserted IDs
-      metadataCache = await fetchMetadataArray();
+      updateMetadataCacheAndHash(await fetchMetadataArray());
       console.log('Metadata inserted into database:');
       console.log(metadataCache);
 
@@ -55,7 +61,7 @@ const connectToDbAndInitCache = async () => {
         }
       }
     } else {
-      metadataCache = metadata;
+      updateMetadataCacheAndHash(metadata);
     }
 
     // initialize animation cache based on metadata
@@ -138,7 +144,20 @@ app.get('/metadata', (req: Request, res: Response) => {
       assertTrue(frameID.length === FRAME_ID_LENGTH, 'Frame ID ' + frameID + ' is not the correct length');
     });
   });
-  res.json(metadataCache);
+  const data = {
+    metadata: metadataCache,
+    hash: metadataHash
+  };
+  res.json(data);
+});
+
+app.get('/metadata/hash/:hash', (req: Request, res: Response) => {
+  console.log('Handling GET request for "/metadata/hash"');
+  const hash = req.params.hash;
+  const data = {
+    hashesMatch: hash === metadataHash
+  };
+  res.json(data);
 });
 
 // Endpoint to fetch a specific frame of an animation
@@ -229,7 +248,7 @@ app.post('/data', async (req, res) => {
     const current = new Metadata(animationID, currentAnimation.frameDuration, currentAnimation.repeatCount, currentAnimation.frames.length, frameOrder);
     newMetadata.push(current);
   }
-  metadataCache = newMetadata;
+  updateMetadataCacheAndHash(newMetadata);
   animationCache = newAnimationData;
 
   try {
