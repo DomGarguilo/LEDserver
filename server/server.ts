@@ -16,6 +16,7 @@ import { Metadata } from "./Metadata";
 
 const app = express();
 const port = process.env.PORT || 5000;
+const firmwareDirectory = path.join(__dirname, 'firmware');
 
 let animationCache: Set<Frame> = new Set();
 let metadataCache: Metadata[] = [];
@@ -182,6 +183,62 @@ app.get('/frameData/:frameId', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching frame:', error);
     res.status(500).send('Internal Server Error');
+  }
+});
+
+/**
+ * Function to get the version from the name of the first firmware file found. Looks in the firmware directory.
+ */
+const getFirmwareVersionFromFilename = (): string | null => {
+  try {
+    const files = fs.readdirSync(firmwareDirectory);
+
+    if (files.length === 0) {
+      console.warn('No firmware files found.');
+      return null;
+    }
+
+    if (files.length > 1) {
+      console.warn('More than one firmware file found. Using the first one.');
+    }
+
+    const firstFile = files[0];
+    const match = firstFile.match(/^firmware_(\d+\.\d+\.\d+)\.bin$/);
+    return match ? match[1] : null;
+  } catch (err) {
+    console.warn('Could not read firmware directory:', err);
+    return null;
+  }
+}
+
+app.get('/firmware/:clientVersion', (req, res) => {
+  const clientVersion = req.params.clientVersion;
+  const currentFirmwareVersion = getFirmwareVersionFromFilename();
+
+  if (!currentFirmwareVersion) {
+    res.status(501).json({ error: 'No firmware version available' });
+    return;
+  }
+
+  if (clientVersion === currentFirmwareVersion) {
+    console.log('Firmware is up to date');
+    res.status(204).end(); // 204 No Content, firmware is up to date
+  } else {
+    console.log(`Firmware is out of date. Client version: ${clientVersion}, Current version: ${currentFirmwareVersion}`);
+    const firmwarePath = path.join(firmwareDirectory, `firmware_${currentFirmwareVersion}.bin`);
+
+    fs.stat(firmwarePath, (err, stats) => {
+      if (err) {
+        console.error('Error reading firmware file:', err);
+        res.status(502).json({ error: 'Error reading firmware file' });
+      } else {
+        res.status(200);
+        res.setHeader('Content-Length', stats.size);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename=${path.basename(firmwarePath)}`);
+        fs.createReadStream(firmwarePath).pipe(res);
+      }
+    });
   }
 });
 

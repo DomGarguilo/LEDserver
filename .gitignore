@@ -8,6 +8,7 @@ coverage/
 
 # production
 build/
+server/firmware/
 
 # misc
 .DS_Store
