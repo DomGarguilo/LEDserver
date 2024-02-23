@@ -4,7 +4,13 @@ const SERVER_ROOT_URL = 'http://localhost:5000/';
 export const IMAGE_PIXEL_LENGTH = 16;
 export const FRAME_PIXEL_COUNT = Math.pow(IMAGE_PIXEL_LENGTH, 2);
 
-// a little function to help us with reordering the result
+/**
+ * Reorders an array by moving an element from one index to another.
+ * @param {Array} list - The original array.
+ * @param {number} startIndex - The index of the element to be moved.
+ * @param {number} endIndex - The index where the element should be moved to.
+ * @returns {Array} - The reordered array.
+ */
 export const Reorder = (list, startIndex, endIndex) => {
     const result = Array.from(list);
     const [removed] = result.splice(startIndex, 1);
@@ -203,3 +209,14 @@ export const getJsonOrder = async () => {
     console.log('Get request to pull image order from server. Response: ' + jsonOrder.order);
     return jsonOrder;
 }
+
+//TODO consolidate with the method from server/utils.ts
+export const genFrameID = (length) => {
+    if (length < 1) throw new Error('Length must be at least 1');
+    const characters = '0123456789abcdef';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += characters[Math.floor(Math.random() * characters.length)];
+    }
+    return result;
+};

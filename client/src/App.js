@@ -9,63 +9,123 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.setAnimationState = this.setAnimationState.bind(this);
-    this.pushNewAnimation = this.pushNewAnimation.bind(this);
-    this.removeFromAnimationList = this.removeFromAnimationList.bind(this);
+    this.addAnimation = this.addAnimation.bind(this);
+    this.removeAnimation = this.removeAnimation.bind(this);
+    this.rearrangeAnimations = this.rearrangeAnimations.bind(this);
+    this.rearrangeFrames = this.rearrangeFrames.bind(this);
     this.sendStateToServer = this.sendStateToServer.bind(this);
 
-    //TODO need to create and track order of Frame IDS along with this
-    this.state = { animationList: [] };
+    this.state = {
+      metadataArray: [], // Array of animation metadata, each with a list of frame IDs
+      frames: new Map(), // Map from frame IDs to frame data
+      isLoading: true,
+    };
   }
 
   // wait for component to mount before pulling data and setting its state
   async componentDidMount() {
     const metadataList = await fetchMetadataFromServer();
 
-    const animationsWithFrames = await Promise.all(metadataList.map(async (animationMetadata) => {
-      let frames = [];
-      for (let i = 0; i < animationMetadata.totalFrames; i++) {
+    const frames = new Map();
+    for (const animationMetadata of metadataList) {
+      for (let i = 0; i < animationMetadata.frameOrder.length; i++) {
         const frameId = animationMetadata.frameOrder[i];
-        const frameData = await fetchFrameDataFromServer(frameId);
-        frames.push(frameData);
+        if (!frames.has(frameId)) {
+          const frameData = await fetchFrameDataFromServer(frameId);
+          frames.set(frameId, frameData);
+        }
       }
-      return { ...animationMetadata, frames };
-    }));
+    }
 
-    this.setState({ animationList: animationsWithFrames });
-  }
-
-  // helper function to set state from child component
-  setAnimationState = (newAnimationList) => {
-    this.setState({ animationList: newAnimationList });
-  }
-
-  // helper function to push new animation into the queue
-  pushNewAnimation = (newAnimation) => {
-    const currentList = this.state.animationList;
-    currentList.unshift(newAnimation);
-    this.setState({ animationList: currentList });
-  }
-
-  // helper function to remove an entry from the animation array
-  removeFromAnimationList = (animationToDelete) => {
     this.setState({
-      animationList: this.state.animationList.filter(function (animation) {
-        return animation.animationID !== animationToDelete;
-      })
+      metadataArray: metadataList,
+      frames: frames,
+      isLoading: false
+    });
+  }
+
+  /**
+   * Adds a new animation to the state.
+   * 
+   * @param {Object} newAnimationMetadata - The metadata of the new animation.
+   * @param {Map<string,Uint8Array} newFrameData - The frame data of the new animation.
+   */
+  addAnimation = (newAnimationMetadata, newFrameData) => {
+    this.setState(prevState => {
+      // Add the new animation's metadata to the beginning of the metadata array
+      const newMetadata = [newAnimationMetadata, ...prevState.metadataArray];
+
+      // create a new Map with the new frame data
+      const newFrames = new Map(prevState.frames);
+      for (const [frameId, frameData] of newFrameData.entries()) {
+        newFrames.set(frameId, frameData);
+      }
+
+      // replace the state with the new metadata and frames
+      return { metadataArray: newMetadata, frames: newFrames };
+    });
+  }
+
+  /**
+   * Removes an animation from the state.
+   * 
+   * @param {string} animationID - The ID of the animation to remove.
+   */
+  removeAnimation = (animationID) => {
+    this.setState(prevState => {
+      // remove all the frames in an animation from the frames Map
+      const newMetadata = prevState.metadataArray.filter(animation => animation.animationID !== animationID);
+
+      // create a new Map with the frames that are not in the removed animation
+      const newFrames = new Map(prevState.frames);
+      for (const animation of prevState.metadataArray) {
+        if (animation.animationID === animationID) {
+          for (const frameId of animation.frameOrder) {
+            newFrames.delete(frameId);
+          }
+        }
+      }
+      return { metadataArray: newMetadata, frames: newFrames };
+    });
+  }
+
+  rearrangeAnimations = (newAnimationOrder) => {
+    this.setState({ metadataArray: newAnimationOrder });
+  }
+
+  /**
+   * Rearranges the frames of an animation in the state.
+   * 
+   * @param {string} animationID - The ID of the animation.
+   * @param {string[]} newFrameOrder - The new order of frames in the given animation.
+   */
+  rearrangeFrames = (animationID, newFrameOrder) => {
+    this.setState(prevState => {
+      const newMetadata = prevState.metadataArray.map(metadata => {
+        if (metadata.animationID === animationID) {
+          // Replace the frame order for this animation
+          return { ...metadata, frameOrder: newFrameOrder };
+        } else {
+          return metadata;
+        }
+      });
+      return { metadataArray: newMetadata };
     });
   }
 
   sendStateToServer() {
-    const currentList = this.state.animationList;
-    post(currentList, '/data');
+    const currentState = {
+      frames: Array.from(this.state.frames.entries()),
+      metadata: this.state.metadataArray
+    }
+    post(currentState, '/data');
   }
 
   render() {
     return (
       <>
-        <Header pushNewAnimation={this.pushNewAnimation} sendStateToServer={this.sendStateToServer} />
-        <AnimationContainer animationDataList={this.state.animationList} setAnimationState={this.setAnimationState} removeFromAnimationList={this.removeFromAnimationList} />
+        <Header addAnimation={this.addAnimation} sendStateToServer={this.sendStateToServer} />
+        <AnimationContainer metadataArray={this.state.metadataArray} frames={this.state.frames} isLoading={this.state.isLoading} removeAnimation={this.removeAnimation} rearrangeAnimations={this.rearrangeAnimations} rearrangeFrames={this.rearrangeFrames} />
       </>
     );
   }

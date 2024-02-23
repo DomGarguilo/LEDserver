@@ -258,58 +258,46 @@ function objectToArray(frameObject: { [key: string]: number }): Uint8Array {
   return new Uint8Array(frameArray);
 }
 
-interface AnimationState {
-  animationID: string;
-  frameDuration: number;
-  repeatCount: number;
-  frames: { [key: string]: number }[];
-}
-
 // POST request to replace the state of animations
 // this will update the order document
 // this will also update the animation documents or create new ones if not exists
 app.post('/data', async (req, res) => {
   console.log('POST request received for "/data"');
 
-  // verify body of post request is valid format
-  const newAnimationState: AnimationState[] = req.body;
-  const passed = verifyAnimationJson(newAnimationState);
-  if (passed !== true) {
-    console.error(passed);
-    res.sendStatus(500);
-    return;
-  }
-
-  console.log(`Incoming data has passed inspection. Received ${newAnimationState.length} animations.`);
-  console.log('First animation:');
-  console.log('ID: ' + newAnimationState[0].animationID);
-  console.log('Frame duration: ' + newAnimationState[0].frameDuration);
-  console.log('Repeat count: ' + newAnimationState[0].repeatCount);
-  console.log('Frame count: ' + newAnimationState[0].frames.length);
-
-  // grab the current order of the animations
-  const newMetadata: Metadata[] = [];
-  const newAnimationData: Set<Frame> = new Set();
-  for (let i = 0; i < newAnimationState.length; i++) {
-    const currentAnimation = newAnimationState[i];
-    const animationID = currentAnimation.animationID;
-    const frameOrder: string[] = [];
-    for (let j = 0; j < currentAnimation.frames.length; j++) {
-      const frameObject: { [key: string]: number } = currentAnimation.frames[j];
-      const frameArray = objectToArray(frameObject);
-      // need to send the frame ID from the client to here
-      const frameID = genFrameID(FRAME_ID_LENGTH);
-      frameOrder.push(frameID);
-      newAnimationData.add(new Frame(frameID, animationID, frameArray));
-    }
-    const current = new Metadata(animationID, currentAnimation.frameDuration, currentAnimation.repeatCount, currentAnimation.frames.length, frameOrder);
-    newMetadata.push(current);
-  }
-  updateMetadataCacheAndHash(newMetadata);
-  animationCache = newAnimationData;
-
   try {
-    // update database with new metadata and animations
+    // Reconstruct the frames Map from received array of [key, value] pairs
+    const framesMap = new Map(req.body.frames);
+    const metadataArray = req.body.metadata;
+
+    console.log(`Received frames count: ${framesMap.size}`);
+    console.log('Received metadata:', metadataArray);
+
+    // Verify the format of the received metadata
+    const verificationResult = verifyAnimationJson(metadataArray);
+    if (verificationResult !== true) {
+      console.error(verificationResult);
+      return res.status(500).send('Invalid animation JSON format.');
+    }
+
+    const newAnimationData:Set<Frame> = new Set();
+    for (const metadata of metadataArray) {
+      console.log('Adding frames for animation:', metadata.animationID);
+      for (const frameID of metadata.frameOrder) {
+        const frameObject = framesMap.get(frameID) as { [key: string]: number } | undefined;
+        if (!frameObject) {
+          console.error('Frame data not found for frameID:', frameID);
+          return res.status(500).send(`Frame data not found for frameID: ${frameID}`);
+        }
+
+        const frameData = objectToArray(frameObject);
+        newAnimationData.add(new Frame(frameID, metadata.animationID, frameData));
+      }
+    }
+
+    // Update metadata cache and hash, then push to MongoDB
+    updateMetadataCacheAndHash(metadataArray);
+    animationCache = newAnimationData;
+
     await Promise.all([
       replaceMetadataArray(metadataCache),
       pushAnimationCacheToMongo()
@@ -317,8 +305,8 @@ app.post('/data', async (req, res) => {
     console.log('Sent to MongoDB with no errors');
     res.sendStatus(200);
   } catch (err) {
-    console.error('Error pushing data to mongo:', err);
-    res.sendStatus(501);
+    console.error('Error processing request:', err);
+    res.sendStatus(501).send('Error pushing data to mongo');
   }
 });
 
@@ -335,18 +323,18 @@ app.get('*', (req, res) => {
 
 // verify that given input is correct format to be inserted into data json
 // returns an error if incorrect or null if it is correct
-function verifyAnimationJson(input: AnimationState[]) {
+function verifyAnimationJson(input: Metadata[]) {
   input.forEach(animation => {
     try {
       assertTrue(animation != null && animation != undefined, 'given var is null');
       assertTrue(animation.animationID != undefined, 'name is undefined');
       assertTrue(animation.frameDuration != undefined, 'frame duration is undefined');
       assertTrue(animation.repeatCount != undefined, 'repeat count is undefined');
-      assertTrue(animation.frames != undefined, 'frame list is undefined');
-      const frameListLength = animation.frames.length;
+      assertTrue(animation.frameOrder != undefined, 'frame list is undefined');
+      const frameListLength = animation.frameOrder.length;
       assertTrue(frameListLength > 0, 'frame list has no entries');
       for (let i = 0; i < frameListLength; i++) {
-        assertTrue(animation.frames[i].length === 256, i + 'th entry length in color array frame list != 256');
+        assertTrue(animation.frameOrder[i].length === 256 * 3, i + 'the entry length in color array frame list != 256*3');
       }
     } catch (err) {
       return err;
