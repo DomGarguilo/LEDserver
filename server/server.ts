@@ -87,11 +87,7 @@ const pushAnimationCacheToMongo = async () => {
     const frameID: string = frame.frameID;
     const animationID: string = frame.animationID;
     const frameData: Uint8Array = frame.data;
-    try {
-      await insertFrame(animationID, frameID, frameData);
-    } catch (error) {
-      console.error(`Error inserting frame ${frameID} for animation ${animationID}:`, error);
-    }
+    await insertFrame(animationID, frameID, frameData);
   }
 };
 
@@ -279,7 +275,7 @@ app.post('/data', async (req, res) => {
       return res.status(500).send('Invalid animation JSON format.');
     }
 
-    const newAnimationData:Set<Frame> = new Set();
+    const newAnimationData: Set<Frame> = new Set();
     for (const metadata of metadataArray) {
       console.log('Adding frames for animation:', metadata.animationID);
       for (const frameID of metadata.frameOrder) {
