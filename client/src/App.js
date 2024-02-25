@@ -1,7 +1,7 @@
 import { Component } from "react";
 import Header from './components/Header';
 import AnimationContainer from './components/AnimationContainer';
-import { fetchMetadataFromServer, fetchFrameDataFromServer, post } from 'utils';
+import { fetchMetadataFromServer, fetchFrameDataFromServer, sendStateToServer } from 'utils';
 
 import './App.css';
 
@@ -114,11 +114,7 @@ class App extends Component {
   }
 
   sendStateToServer() {
-    const currentState = {
-      frames: Array.from(this.state.frames.entries()),
-      metadata: this.state.metadataArray
-    }
-    post(currentState, '/data');
+    sendStateToServer(this.state.metadataArray, this.state.frames);
   }
 
   render() {

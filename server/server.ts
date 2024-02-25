@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import favicon from 'serve-favicon';
 import * as fs from 'fs';
+import multer from 'multer';
 import { FRAME_ID_LENGTH } from './constants';
 import { genFrameID, hashString } from './utils';
 
@@ -254,38 +255,45 @@ function objectToArray(frameObject: { [key: string]: number }): Uint8Array {
   return new Uint8Array(frameArray);
 }
 
+const upload = multer();
+
 // POST request to replace the state of animations
 // this will update the order document
 // this will also update the animation documents or create new ones if not exists
-app.post('/data', async (req, res) => {
+app.post('/data', upload.any(), async (req, res) => {
   console.log('POST request received for "/data"');
 
   try {
-    // Reconstruct the frames Map from received array of [key, value] pairs
-    const framesMap = new Map(req.body.frames);
-    const metadataArray = req.body.metadata;
+    const metadataArray = JSON.parse(req.body.metadata);
 
-    console.log(`Received frames count: ${framesMap.size}`);
     console.log('Received metadata:', metadataArray);
 
     // Verify the format of the received metadata
-    const verificationResult = verifyAnimationJson(metadataArray);
-    if (verificationResult !== true) {
-      console.error(verificationResult);
+    if (!verifyAnimationJson(metadataArray)) {
+      console.error('Invalid animation JSON format.');
       return res.status(500).send('Invalid animation JSON format.');
     }
+
+    // Reconstruct the frames Map from received files
+    const framesMap: Map<string, Uint8Array> = new Map();
+    if (req.files) {
+      for (const file of req.files as Express.Multer.File[]) {
+        const frameData = new Uint8Array(file.buffer);
+        framesMap.set(file.fieldname, frameData);
+      }
+    }
+    console.log(`Received frames count: ${framesMap.size}`);
 
     const newAnimationData: Set<Frame> = new Set();
     for (const metadata of metadataArray) {
       console.log('Adding frames for animation:', metadata.animationID);
       for (const frameID of metadata.frameOrder) {
-        const frameObject = framesMap.get(frameID) as { [key: string]: number } | undefined;
-        if (!frameObject) {
+        const frameData: Uint8Array | undefined = framesMap.get(frameID);
+        if (!frameData) {
           console.error('Frame data not found for frameID:', frameID);
           return res.status(500).send(`Frame data not found for frameID: ${frameID}`);
         }
 
-        const frameData = objectToArray(frameObject);
         newAnimationData.add(new Frame(frameID, metadata.animationID, frameData));
       }
     }
@@ -302,7 +310,7 @@ app.post('/data', async (req, res) => {
     res.sendStatus(200);
   } catch (err) {
     console.error('Error processing request:', err);
-    res.sendStatus(501).send('Error pushing data to mongo');
+    res.status(501).send('Error pushing data to mongo');
   }
 });
 
