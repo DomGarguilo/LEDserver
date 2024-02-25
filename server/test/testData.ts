@@ -50,9 +50,9 @@ const testAnimationData: { [key: string]: Uint8Array[] } = {
 
 const testMetadata: Metadata[] = [];
 
-const anim1 = new Metadata('anim1', 500, 3, 4, [genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH)]);
-const anim2 = new Metadata('anim2', 300, 2, 5, [genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH)]);
-const anim3 = new Metadata('anim3', 200, 4, 3, [genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH)]);
+const anim1 = new Metadata('anim1', 500, 3, [genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH)]);
+const anim2 = new Metadata('anim2', 300, 2, [genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH)]);
+const anim3 = new Metadata('anim3', 200, 4, [genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH), genFrameID(FRAME_ID_LENGTH)]);
 
 testMetadata.push(anim1);
 testMetadata.push(anim2);

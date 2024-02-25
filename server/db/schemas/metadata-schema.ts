@@ -4,7 +4,6 @@ interface IMetadataObject {
     animationID: string;
     frameDuration: number;
     repeatCount: number;
-    totalFrames: number;
     frameOrder: string[];
 }
 
@@ -22,10 +21,6 @@ const MetadataObjectSchema = new Schema<IMetadataObject>({
         required: true
     },
     repeatCount: {
-        type: Number,
-        required: true
-    },
-    totalFrames: {
         type: Number,
         required: true
     },

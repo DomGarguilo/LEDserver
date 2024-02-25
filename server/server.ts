@@ -54,7 +54,7 @@ const connectToDbAndInitCache = async () => {
       for (let i = 0; i < metadataCache.length; i++) {
         const currentMetadata = metadataCache[i];
         console.log(`Inserting animation ${currentMetadata.animationID}`);
-        for (let j = 0; j < currentMetadata.totalFrames; j++) {
+        for (let j = 0; j < currentMetadata.frameOrder.length; j++) {
           const frameData = testAnimationData[currentMetadata.animationID][j];
           const frameID = currentMetadata.frameOrder[j]
           console.log(`Inserting frame with ID ${frameID} into animation ${currentMetadata.animationID}`);
@@ -69,7 +69,7 @@ const connectToDbAndInitCache = async () => {
     for (let i = 0; i < metadataCache.length; i++) {
       const currentMetadata = metadataCache[i];
       console.log('looking for animation ' + currentMetadata.animationID);
-      for (let j = 0; j < currentMetadata.totalFrames; j++) {
+      for (let j = 0; j < currentMetadata.frameOrder.length; j++) {
         const currentFrameID = currentMetadata.frameOrder[j];
         const frameData = await fetchFrame(currentFrameID);
         assertTrue(frameData !== null, 'Could not find animation for name: ' + currentMetadata.animationID + ' and frame number: ' + j);

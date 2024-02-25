@@ -8,7 +8,6 @@ class FrameList extends PureComponent {
     render() {
         const { metadata, frames, dragSwitch } = this.props;
         if (!metadata || !metadata.frameOrder) {
-            console.error('metadata or metadata.frameOrder is null for ' + metadata.animationID);
             return null;
         }
         return (
