@@ -6,11 +6,8 @@ import Switch from "./Switch";
 import { getItemStyle } from 'utils';
 import trashIcon from '../resources/trash_icon.png';
 
-
-
-
 const WholeBox = (props) => {
-    const { animationData, index, removeFromAnimationList } = props;
+    const { metadata, frames, index, removeAnimation } = props;
     const [value, setValue] = useState(false);
 
     const trashIconStyle = {
@@ -21,14 +18,14 @@ const WholeBox = (props) => {
     };
 
     return (
-        <Draggable key={animationData.animationID} draggableId={animationData.animationID} index={index} isDragDisabled={false}>
+        <Draggable key={metadata.animationID} draggableId={metadata.animationID} index={index} isDragDisabled={false}>
             {(provided, snapshot) => (
                 <span {...provided.dragHandleProps}>
                     <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
-                        <Animation data={animationData} />
-                        <FrameList animationData={animationData} animationIndex={index} dragSwitch={value} />
-                        <Switch isOn={value} handleToggle={() => setValue(!value)} name={animationData.animationID} />
-                        <img src={trashIcon} width={26} height={39} style={trashIconStyle} onClick={() => removeFromAnimationList(animationData.animationID)} alt="trashbin" />
+                        <Animation metadata={metadata} frames={frames} />
+                        <FrameList metadata={metadata} frames={frames} animationIndex={index} dragSwitch={value} />
+                        <Switch isOn={value} handleToggle={() => setValue(!value)} name={metadata.animationID} />
+                        <img src={trashIcon} width={26} height={39} style={trashIconStyle} onClick={() => removeAnimation(metadata.animationID)} alt="trashbin" />
                     </div>
                 </span>
             )}

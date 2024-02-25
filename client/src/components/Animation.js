@@ -6,16 +6,23 @@ const pixelSize = 10;
 
 const Animation = (props) => {
 
-        const { animationID, frameDuration, repeatCount, frames } = props.data;
-        console.log('Creating animation '+ animationID);
-        
-        const scaledFrameDuration = frameDuration*frames.length;
-        return (
-            <Wrapper>
-                <StyledFrame animationID={animationID} pixelSize={pixelSize} frameDuration={scaledFrameDuration} repeatCount={repeatCount} frames={frames} />
-            </Wrapper>
-        )
-    
+    const { metadata, frames } = props;
+
+    // Get the frames for this animation
+    const animationFrames = metadata.frameOrder.map(frameId => frames.get(frameId));
+
+    // Don't render if animationFrames is undefined or empty
+    if (!animationFrames || animationFrames.length === 0) {
+        return null;
+    }
+
+    const scaledFrameDuration = metadata.frameDuration * frames.size;
+    return (
+        <Wrapper>
+            <StyledFrame animationID={metadata.animationID} pixelSize={pixelSize} frameDuration={scaledFrameDuration} repeatCount={metadata.repeatCount} frames={animationFrames} />
+        </Wrapper>
+    )
+
 };
 
 export default Animation;

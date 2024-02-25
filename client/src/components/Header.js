@@ -1,14 +1,16 @@
 import { Component } from "react";
-import { assertTrue, getHeaderStyle, arraysOrderAreEqual, Reorder, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils"
+import { assertTrue, getHeaderStyle, Reorder, IMAGE_PIXEL_LENGTH, FRAME_PIXEL_COUNT } from "../utils"
 import { DragDropContext } from "react-beautiful-dnd";
 import FrameList from "./FrameList";
+import { genFrameID } from "../utils";
 
 class Header extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            frames: []
+            metadata: {},
+            frames: new Map()
         };
         this.onDragEnd = this.onDragEnd.bind(this);
         this.onImageChange = this.onImageChange.bind(this);
@@ -16,9 +18,9 @@ class Header extends Component {
         this.sendAppStateToServer = this.sendAppStateToServer.bind(this);
     }
 
-    // determines when the Component should re-render
+    // re-render when the metadata changes
     shouldComponentUpdate(nextProps, nextState) {
-        return !arraysOrderAreEqual(this.state.frames, nextState.frames);
+        return this.state.metadata !== nextState.metadata;
     }
 
     // when images are selected from file explorer
@@ -38,21 +40,32 @@ class Header extends Component {
         // load all of the images
         loadImages(imgURLarray).then(imgArray => {
             // convert all images to hex arrays
-            var hexArraySet = [];
+            var newFrames = new Map();
+            var newFrameOrder = [];
             for (let img of imgArray) {
-                const imgData = getImageData(img)
-                const hexArray = getRGBArray(imgData);
-                hexArraySet.push(hexArray);
+                const frameId = genFrameID(16);
+                const imgData = getImageData(img);
+                newFrames.set(frameId, getRGBArray(imgData));
+                newFrameOrder.push(frameId);
             }
-            // set the hex color arrays to state
+
+            const newMetadata = {
+                animationID: 'ID' + new Date().getTime(),
+                frameDuration: 400,
+                repeatCount: 3,
+                frameOrder: newFrameOrder
+            };
+
+            // set the new frames and metadata
             this.setState({
-                frames: hexArraySet
+                metadata: newMetadata,
+                frames: newFrames
             });
         });
 
     };
 
-    // reorders the frams based on where they were dragged
+    // reorders the frames based on where they were dragged
     onDragEnd(result) {
         // dropped outside the list
         if (!result.destination) {
@@ -60,30 +73,40 @@ class Header extends Component {
             return;
         }
 
-        const reorderedFrames = Reorder(
-            this.state.frames,
+        const reorderedFrameOrder = Reorder(
+            this.state.metadata.frameOrder,
             result.source.index,
             result.destination.index
         );
 
         this.setState({
-            frames: reorderedFrames
+            metadata: {
+                ...this.state.metadata,
+                frameOrder: reorderedFrameOrder
+            }
         });
     }
 
+    /**
+     * Inserts a new animation into the component's state and triggers the addAnimation prop.
+     * If there are no frames to upload, it logs a message and returns.
+     */
     onInsert() {
-        if (this.state.frames.length === 0) {
+        if (this.state.frames.size === 0) {
             console.log('Nothing to upload, state.frames is empty');
             return;
         }
-        const newAnimation = {
-            animationID: 'ID' + new Date().getTime(),
-            frameDuration: 500,
-            repeatCount: 3,
-            frames: this.state.frames
-        }
-        this.setState({ frames: [] });
-        this.props.pushNewAnimation(newAnimation);
+
+        console.log('inserting new animation into queue');
+        console.log(this.state.metadata);
+        console.log(this.state.frames);
+
+        this.props.addAnimation(this.state.metadata, this.state.frames);
+
+        this.setState({
+            metadata: {},
+            frames: new Map()
+        });
     }
 
     sendAppStateToServer() {
@@ -98,7 +121,7 @@ class Header extends Component {
                 <button onClick={this.onInsert}>Insert new animation into queue</button>
                 <button onClick={this.sendAppStateToServer}>Send state to server</button>
                 <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
-                    <FrameList animationData={this.state} animationIndex={1} dragSwitch={true} />
+                    <FrameList metadata={this.state.metadata} frames={this.state.frames} animationIndex={1} dragSwitch={true} />
                 </DragDropContext>
             </div >
         )
