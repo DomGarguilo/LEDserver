@@ -111,27 +111,33 @@ export const reverseEveryOtherCol = (matrix) => {
 }
 
 
-// makes a POST req to the server
-// Accepts json object containing hex color array for a new image formatted for use by the matrix
-export const post = async (data, path) => {
-    try {
-        const config = {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        }
-        const response = await fetch(path, config);
+/**
+ * Sends the state data to the server.
+ * @param {Array} metadataArray - The array of metadata.
+ * @param {Map<string,Uint8Array>} frameDataMap - The map of frame data.
+ * @returns {Promise<void>} - A promise that resolves when the data is sent to the server.
+ */
+export const sendStateToServer = async (metadataArray, frameDataMap) => {
+    const formData = new FormData();
 
-        if (response.ok) {
-            // maybe maybe this a callback to refresh
-            return response;
-        } else {
-            console.error("error in response, status not OK");
+    // Add metadata to the form data
+    formData.append('metadata', JSON.stringify(metadataArray));
+
+    // Add frame data to the form data
+    for (const [frameId, frameData] of frameDataMap.entries()) {
+        // convert Uint8Array to Blob
+        const blob = new Blob([frameData], { type: 'application/octet-stream' });
+        formData.append(frameId, blob);
+    }
+
+    try {
+        const response = await fetch('/data', { method: 'POST', body: formData });
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
         }
     } catch (error) {
-        return error;
+        console.error('Failed to send state to server:', error);
+        throw error;
     }
 }
 

@@ -5,7 +5,7 @@ const rgbValueLength = 768; // 256 pixels * 3 RGB values per pixel
 interface IFrameSchema {
     animationID: string;
     frameID: string;
-    rgbValues: number[];
+    rgbValues: Buffer;
 }
 
 const FrameSchema = new mongoose.Schema<IFrameSchema>({
@@ -18,11 +18,11 @@ const FrameSchema = new mongoose.Schema<IFrameSchema>({
         required: true
     },
     rgbValues: {
-        type: [Number],
+        type: Buffer,
         required: true,
         validate: {
-            validator: (v: number[]) => v.length === rgbValueLength,
-            message: (props: { value: number[] }) => `${props.value.length} is not the correct length for rgbValues. Expected ${rgbValueLength}.`
+            validator: (v: Buffer) => v.length === rgbValueLength,
+            message: (props: { value: Buffer }) => `${props.value.length} is not the correct length for rgbValues. Expected ${rgbValueLength}.`
         }
     }
 });
