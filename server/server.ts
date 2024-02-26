@@ -72,8 +72,7 @@ const connectToDbAndInitCache = async () => {
       console.log('looking for animation ' + currentMetadata.animationID);
       for (let j = 0; j < currentMetadata.frameOrder.length; j++) {
         const currentFrameID = currentMetadata.frameOrder[j];
-        const frameData = await fetchFrame(currentFrameID);
-        assertTrue(frameData !== null, 'Could not find animation for name: ' + currentMetadata.animationID + ' and frame number: ' + j);
+        const frameData = new Uint8Array(await fetchFrame(currentFrameID));
         animationCache.add(new Frame(currentFrameID, currentMetadata.animationID, frameData));
         console.log('Added frame ' + j + ' to animation ' + currentMetadata.animationID);
       }
@@ -167,15 +166,14 @@ app.get('/frameData/:frameId', async (req: Request, res: Response) => {
 
   try {
     // Fetch the frame data using the frame ID
-    const frame = await fetchFrame(frameId);
+    const frame: Buffer = await fetchFrame(frameId);
     if (!frame) {
       console.error(`Could not find frame with ID ${frameId}`);
       return res.status(404).send('Frame not found.');
     }
 
-    const buffer = Buffer.from(frame);
     res.contentType('application/octet-stream');
-    res.send(buffer);
+    res.send(frame);
 
   } catch (error) {
     console.error('Error fetching frame:', error);
