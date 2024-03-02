@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
 import { Reorder } from "../utils"
 import Animation from "./Animation";
@@ -28,21 +28,29 @@ const modalStyles = {
 };
 
 const Modal = ({ metadata, frames, rearrangeFrames, closeModal }) => {
+  const [localMetadata, setLocalMetadata] = useState(metadata);
 
   const onDragEnd = (result) => {
-    // dropped outside the list
     if (!result.destination) {
-      console.log('NOT EQUALS');
+      // dropped outside the list
       return;
     }
 
     const reorderedFrameOrder = Reorder(
-      metadata.frameOrder,
+      localMetadata.frameOrder,
       result.source.index,
       result.destination.index
     );
 
-    rearrangeFrames(result.type, reorderedFrameOrder);
+    setLocalMetadata({
+      ...localMetadata,
+      frameOrder: reorderedFrameOrder
+    });
+  }
+
+  const handleSaveAndClose = () => {
+    rearrangeFrames(localMetadata.animationID, localMetadata.frameOrder);
+    closeModal();
   }
 
   useEffect(() => {
@@ -59,13 +67,13 @@ const Modal = ({ metadata, frames, rearrangeFrames, closeModal }) => {
   }, [closeModal]);
 
   return (
-    <div style={modalStyles.backdrop} onClick={closeModal}>
+    <div style={modalStyles.backdrop} onClick={handleSaveAndClose}>
       <div style={modalStyles.content} onClick={e => e.stopPropagation()}> {/* Prevent click from closing modal */}
-        <Animation metadata={metadata} frames={frames} />
+        <Animation metadata={localMetadata} frames={frames} />
         <DragDropContext onDragEnd={onDragEnd}  >
-          <FrameList metadata={metadata} frames={frames} dragSwitch={true} />
+          <FrameList metadata={localMetadata} frames={frames} dragSwitch={true} />
         </DragDropContext>
-        <button onClick={closeModal}>Close</button>
+        <button onClick={handleSaveAndClose}>Close</button>
       </div>
     </div>
   );
