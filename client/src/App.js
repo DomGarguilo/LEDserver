@@ -2,6 +2,7 @@ import { Component } from "react";
 import Header from './components/Header';
 import AnimationContainer from './components/AnimationContainer';
 import { fetchMetadataFromServer, fetchFrameDataFromServer, sendStateToServer } from 'utils';
+import Modal from './components/Modal';
 
 import './App.css';
 
@@ -19,6 +20,7 @@ class App extends Component {
       metadataArray: [], // Array of animation metadata, each with a list of frame IDs
       frames: new Map(), // Map from frame IDs to frame data
       isLoading: true,
+      activeAnimationID: null // The ID of the Animation that is currently being edited, or null if none active
     };
   }
 
@@ -40,9 +42,18 @@ class App extends Component {
     this.setState({
       metadataArray: metadataList,
       frames: frames,
-      isLoading: false
+      isLoading: false,
+      activeAnimationID: null
     });
   }
+
+  setActiveAnimationID = (animationID) => {
+    this.setState({ activeAnimationID: animationID });
+  };
+
+  closeModal = () => {
+    this.setState({ activeAnimationID: null });
+  };
 
   /**
    * Adds a new animation to the state.
@@ -118,10 +129,28 @@ class App extends Component {
   }
 
   render() {
+    const activeMetadata = this.state.metadataArray.find(metadata => metadata.animationID === this.state.activeAnimationID);
+
     return (
       <>
         <Header addAnimation={this.addAnimation} sendStateToServer={this.sendStateToServer} />
-        <AnimationContainer metadataArray={this.state.metadataArray} frames={this.state.frames} isLoading={this.state.isLoading} removeAnimation={this.removeAnimation} rearrangeAnimations={this.rearrangeAnimations} rearrangeFrames={this.rearrangeFrames} />
+        <AnimationContainer
+          metadataArray={this.state.metadataArray}
+          frames={this.state.frames}
+          isLoading={this.state.isLoading}
+          removeAnimation={this.removeAnimation}
+          rearrangeAnimations={this.rearrangeAnimations}
+          rearrangeFrames={this.rearrangeFrames}
+          setActiveAnimationID={this.setActiveAnimationID}
+        />
+        {this.state.activeAnimationID && (
+          <Modal
+            metadata={activeMetadata}
+            frames={this.state.frames}
+            rearrangeFrames={this.rearrangeFrames}
+            closeModal={this.closeModal}
+          />
+        )}
       </>
     );
   }

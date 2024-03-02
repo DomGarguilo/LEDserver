@@ -56,7 +56,9 @@ class AnimationContainer extends Component {
                                     frames={this.props.frames}
                                     index={index}
                                     removeAnimation={this.props.removeAnimation}
-                                    key={metadata.animationID} />
+                                    key={metadata.animationID}
+                                    edit={() => this.props.setActiveAnimationID(metadata.animationID)}
+                                />
                             ))}
                             {provided.placeholder}
                         </div>
