@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
 import { Reorder } from "../utils"
 import Animation from "./Animation";
@@ -27,8 +27,18 @@ const modalStyles = {
   },
 };
 
-const Modal = ({ metadata, frames, rearrangeFrames, closeModal }) => {
+const Modal = ({ metadata, frames, closeModal, updateMetadata }) => {
+  const animationID = metadata.animationID;
   const [localMetadata, setLocalMetadata] = useState(metadata);
+
+  const handleSave = () => {
+    updateMetadata(animationID, localMetadata);
+  }
+
+  const handleSaveAndClose = () => {
+    handleSave();
+    closeModal();
+  }
 
   const onDragEnd = (result) => {
     if (!result.destination) {
@@ -36,44 +46,43 @@ const Modal = ({ metadata, frames, rearrangeFrames, closeModal }) => {
       return;
     }
 
-    const reorderedFrameOrder = Reorder(
+    const newFrameOrder = Reorder(
       localMetadata.frameOrder,
       result.source.index,
       result.destination.index
     );
 
-    setLocalMetadata({
-      ...localMetadata,
-      frameOrder: reorderedFrameOrder
-    });
+    setLocalMetadata({ ...localMetadata, frameOrder: newFrameOrder });
   }
 
-  const handleSaveAndClose = () => {
-    rearrangeFrames(localMetadata.animationID, localMetadata.frameOrder);
-    closeModal();
+  const handleFrameDurationChange = (e) => {
+    setLocalMetadata({ ...localMetadata, frameDuration: Number(e.target.value) });
   }
 
-  useEffect(() => {
-    function keyListener(e) {
-      if (e.keyCode === 27) {
-        closeModal();
-      }
-    }
-
-    document.addEventListener("keydown", keyListener);
-
-    // Cleanup the event listener on component unmount
-    return () => document.removeEventListener("keydown", keyListener);
-  }, [closeModal]);
+  const handleRepeatCountChange = (e) => {
+    setLocalMetadata({ ...localMetadata, repeatCount: Number(e.target.value) });
+  }
 
   return (
-    <div style={modalStyles.backdrop} onClick={handleSaveAndClose}>
-      <div style={modalStyles.content} onClick={e => e.stopPropagation()}> {/* Prevent click from closing modal */}
+    <div style={modalStyles.backdrop} onClick={closeModal}>
+      <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
         <Animation metadata={localMetadata} frames={frames} />
         <DragDropContext onDragEnd={onDragEnd}  >
           <FrameList metadata={localMetadata} frames={frames} dragSwitch={true} />
         </DragDropContext>
-        <button onClick={handleSaveAndClose}>Close</button>
+        <input
+          type="number"
+          value={localMetadata.frameDuration}
+          onChange={handleFrameDurationChange}
+        />
+        <input
+          type="number"
+          value={localMetadata.repeatCount}
+          onChange={handleRepeatCountChange}
+        />
+        <button onClick={handleSave}>Save</button>
+        <button onClick={handleSaveAndClose}>Save and Close</button>
+        <button onClick={closeModal}>Close without saving</button>
       </div>
     </div>
   );

@@ -124,6 +124,29 @@ class App extends Component {
     });
   }
 
+  /**
+   * Updates the metadata of the animation with the given ID.
+   * 
+   * @param {string} animationID - The ID of the animation to update.
+   * @param {Object} newMetadata - The new metadata for the animation.
+   */
+  updateMetadata = (animationID, newMetadata) => {
+    if (!newMetadata.animationID || !newMetadata.frameDuration || !newMetadata.repeatCount || !newMetadata.frameOrder) {
+      console.error('Invalid metadata:', newMetadata);
+      return;
+    }
+    this.setState(prevState => {
+      const newMetadataArray = prevState.metadataArray.map(metadata => {
+        if (metadata.animationID === animationID) {
+          return newMetadata;
+        } else {
+          return metadata;
+        }
+      });
+      return { metadataArray: newMetadataArray };
+    });
+  }
+
   sendStateToServer() {
     sendStateToServer(this.state.metadataArray, this.state.frames);
   }
@@ -147,8 +170,8 @@ class App extends Component {
           <Modal
             metadata={activeMetadata}
             frames={this.state.frames}
-            rearrangeFrames={this.rearrangeFrames}
             closeModal={this.closeModal}
+            updateMetadata={this.updateMetadata}
           />
         )}
       </>
