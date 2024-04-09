@@ -15,7 +15,8 @@
     "express": "^4.17.3",
     "mongoose": "^6.3.1",
     "multer": "^1.4.5-lts.1",
-    "serve-favicon": "^2.5.0"
+    "serve-favicon": "^2.5.0",
+    "tsc": "^2.0.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
