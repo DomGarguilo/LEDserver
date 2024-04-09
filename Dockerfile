@@ -8,7 +8,7 @@ RUN npm ci --omit=dev
 # install dependencies from server
 WORKDIR /app/server
 COPY /server/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # install dependencies from client
 WORKDIR /app/client
