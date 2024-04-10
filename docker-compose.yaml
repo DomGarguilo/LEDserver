@@ -17,11 +17,9 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - mongodata:/data/db
+      - /home/server/docker/LEDserver/:/data/db
     networks:
       - led-server
 networks:
   led-server:
     driver: bridge
-volumes:
-  mongodata:
