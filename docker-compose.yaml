@@ -8,6 +8,9 @@ services:
       - '5000:5000'
     depends_on:
       - mongo
+    # example firmware dir. change it or comment it out to disable firmware updates
+    volumes:
+      - ~/docker/LEDserver/firmware/:/app/server/build/firmware
     networks:
       - led-server
   mongo:
@@ -17,7 +20,7 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - /home/server/docker/LEDserver/:/data/db
+      - ~/docker/LEDserver/data/:/data/db
     networks:
       - led-server
 networks:
