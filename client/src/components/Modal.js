@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { Component } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
-import { Reorder } from "../utils"
+import { Reorder, loadImages, genFrameID, getImageData, getRGBArray } from "../utils"
 import Animation from "./Animation";
 import FrameList from "./FrameList";
 
@@ -27,65 +27,154 @@ const modalStyles = {
   },
 };
 
-const Modal = ({ metadata, frames, closeModal, updateMetadata }) => {
-  const animationID = metadata.animationID;
-  const [localMetadata, setLocalMetadata] = useState(metadata);
-
-  const handleSave = () => {
-    updateMetadata(animationID, localMetadata);
+class Modal extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      localMetadata: this.props.metadata || this.getDefaultMetadata(),
+      frames: this.props.frames || new Map()
+    };
+    this.onImageChange = this.onImageChange.bind(this);
   }
 
-  const handleSaveAndClose = () => {
-    handleSave();
-    closeModal();
+  handleSave = () => {
+    const { localMetadata, frames } = this.state;
+    if (frames.size < 1) {
+      return;
+    }
+
+    if (this.props.isNewAnimation) {
+      this.props.addAnimation(localMetadata, frames);
+    } else {
+      this.props.updateMetadata(this.props.metadata.animationID, localMetadata);
+    }
   }
 
-  const onDragEnd = (result) => {
+  handleSaveAndClose = () => {
+    this.handleSave();
+    this.props.closeModal();
+  };
+
+  onDragEnd = (result) => {
     if (!result.destination) {
       // dropped outside the list
       return;
     }
 
     const newFrameOrder = Reorder(
-      localMetadata.frameOrder,
+      this.state.localMetadata.frameOrder,
       result.source.index,
       result.destination.index
     );
 
-    setLocalMetadata({ ...localMetadata, frameOrder: newFrameOrder });
+    this.setState(prevState => ({
+      localMetadata: {
+        ...prevState.localMetadata,
+        frameOrder: newFrameOrder
+      }
+    }));
   }
 
-  const handleFrameDurationChange = (e) => {
-    setLocalMetadata({ ...localMetadata, frameDuration: Number(e.target.value) });
+  handleFrameDurationChange = (e) => {
+    const newDuration = Number(e.target.value);
+    this.setState(prevState => ({
+      localMetadata: {
+        ...prevState.localMetadata,
+        frameDuration: newDuration
+      }
+    }));
   }
 
-  const handleRepeatCountChange = (e) => {
-    setLocalMetadata({ ...localMetadata, repeatCount: Number(e.target.value) });
+  handleRepeatCountChange = (e) => {
+    const newCount = Number(e.target.value);
+    this.setState(prevState => ({
+      localMetadata: {
+        ...prevState.localMetadata,
+        repeatCount: newCount
+      }
+    }));
   }
 
-  return (
-    <div style={modalStyles.backdrop} onClick={closeModal}>
-      <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
-        <Animation metadata={localMetadata} frames={frames} />
-        <DragDropContext onDragEnd={onDragEnd}  >
-          <FrameList metadata={localMetadata} frames={frames} dragSwitch={true} />
-        </DragDropContext>
-        <input
-          type="number"
-          value={localMetadata.frameDuration}
-          onChange={handleFrameDurationChange}
-        />
-        <input
-          type="number"
-          value={localMetadata.repeatCount}
-          onChange={handleRepeatCountChange}
-        />
-        <button onClick={handleSave}>Save</button>
-        <button onClick={handleSaveAndClose}>Save and Close</button>
-        <button onClick={closeModal}>Close without saving</button>
+  getDefaultMetadata() {
+    return {
+      animationID: 'ID' + new Date().getTime(),
+      frameDuration: 400,
+      repeatCount: 3,
+      frameOrder: []
+    };
+  }
+
+  onImageChange = async (event) => {
+    if (!event.target.files || event.target.files.length === 0) {
+      return;
+    }
+
+    const files = Array.from(event.target.files);
+    const imgURLarray = files.map(file => URL.createObjectURL(file));
+
+    try {
+      const imgArray = await loadImages(imgURLarray);
+      const newFrames = new Map();
+      const newFrameOrder = [];
+
+      for (let img of imgArray) {
+        const frameId = genFrameID(16);
+        const imgData = getImageData(img);
+        const rgbArray = getRGBArray(imgData);
+        newFrames.set(frameId, rgbArray);
+        newFrameOrder.push(frameId);
+      }
+
+      this.setState(prevState => ({
+        localMetadata: {
+          ...prevState.localMetadata,
+          frameOrder: newFrameOrder
+        },
+        frames: newFrames
+      }));
+    } catch (error) {
+      console.error("Failed to load images:", error);
+    }
+  };
+
+
+  render() {
+    const { localMetadata, frames } = this.state;
+
+    return (
+      <div style={modalStyles.backdrop} onClick={this.props.closeModal}>
+        <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
+          {this.props.isNewAnimation && (
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={this.onImageChange}
+              style={{ display: 'block', marginBottom: '20px' }}
+            />
+          )}
+          <Animation metadata={localMetadata} frames={frames} />
+          <DragDropContext onDragEnd={this.onDragEnd}>
+            <FrameList metadata={localMetadata} frames={frames} dragSwitch={true} />
+          </DragDropContext>
+          <input
+            type="number"
+            value={localMetadata.frameDuration}
+            onChange={this.handleFrameDurationChange}
+          />
+          <input
+            type="number"
+            value={localMetadata.repeatCount}
+            onChange={this.handleRepeatCountChange}
+          />
+          <button onClick={this.handleSave}>{this.props.isNewAnimation ? 'Insert' : 'Save'}</button>
+          <button onClick={this.handleSaveAndClose}>{this.props.isNewAnimation ? 'Insert and close' : 'Save and close'}</button>
+          <button onClick={this.props.closeModal}>Close</button>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+
+}
 
 export default Modal;
