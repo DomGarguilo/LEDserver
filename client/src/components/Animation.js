@@ -16,10 +16,10 @@ const Animation = (props) => {
     // Get the frames for this animation
     const animationFrames = metadata.frameOrder.map(frameId => frames.get(frameId));
 
-    const scaledFrameDuration = metadata.frameDuration * frames.size;
+    const totalAnimationDuration = metadata.frameDuration * metadata.frameOrder.length;
     return (
         <Wrapper>
-            <StyledFrame animationID={metadata.animationID} pixelSize={pixelSize} frameDuration={scaledFrameDuration} repeatCount={metadata.repeatCount} frames={animationFrames} />
+            <StyledFrame animationID={metadata.animationID} pixelSize={pixelSize} frameDuration={totalAnimationDuration} repeatCount={metadata.repeatCount} frames={animationFrames} />
         </Wrapper>
     )
 

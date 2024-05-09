@@ -31,8 +31,8 @@ class Modal extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      localMetadata: this.props.metadata || this.getDefaultMetadata(),
-      frames: this.props.frames || new Map()
+      localMetadata: (props.metadata && Object.keys(props.metadata).length > 0) ? props.metadata : this.getDefaultMetadata(),
+      frames: props.frames && props.frames.size > 0 ? props.frames : new Map()
     };
     this.onImageChange = this.onImageChange.bind(this);
   }

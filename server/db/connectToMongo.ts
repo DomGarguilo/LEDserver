@@ -11,6 +11,7 @@ if (!mongoPath) {
 
 const connectToMongo = async () => {
   try {
+    mongoose.set('strictQuery', true);
     mongoose.connect(mongoPath);
   } catch (error) {
     console.error(error);
