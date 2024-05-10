@@ -8,18 +8,18 @@ const Animation = (props) => {
 
     const { metadata, frames } = props;
 
-    // Get the frames for this animation
-    const animationFrames = metadata.frameOrder.map(frameId => frames.get(frameId));
-
     // Don't render if animationFrames is undefined or empty
-    if (!animationFrames || animationFrames.length === 0) {
+    if (!metadata.frameOrder || metadata.frameOrder.length === 0) {
         return null;
     }
 
-    const scaledFrameDuration = metadata.frameDuration * frames.size;
+    // Get the frames for this animation
+    const animationFrames = metadata.frameOrder.map(frameId => frames.get(frameId));
+
+    const totalAnimationDuration = metadata.frameDuration * metadata.frameOrder.length;
     return (
         <Wrapper>
-            <StyledFrame animationID={metadata.animationID} pixelSize={pixelSize} frameDuration={scaledFrameDuration} repeatCount={metadata.repeatCount} frames={animationFrames} />
+            <StyledFrame animationID={metadata.animationID} pixelSize={pixelSize} frameDuration={totalAnimationDuration} repeatCount={metadata.repeatCount} frames={animationFrames} />
         </Wrapper>
     )
 
@@ -45,7 +45,7 @@ const Wrapper = styled.section`
     const rangeList = getCSSAnimationTimings(frames.length);
     const frameList = frames;
     assertTrue(frameList.length > 0,"Frame list should contain frames. (non-zero length)");
-    assertTrue(frameList[0].length === FRAME_PIXEL_COUNT*3);
+    assertTrue(frameList[0].length === FRAME_PIXEL_COUNT*3,`Frame length should be ${FRAME_PIXEL_COUNT*3} was ${frameList[0].length}`);
     assertTrue(frameList.length === rangeList.length,"Frame list and range list should be same length");
     let result = '@keyframes ' + animationID + ' {';
     for (let i = 0; i < frameList.length; i++) {

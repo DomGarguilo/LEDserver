@@ -56,15 +56,6 @@ export const getFrameStyle = () => ({
     display: "flex"
 });
 
-export const getHeaderStyle = () => ({
-    height: 300,
-    backgroundColor: "grey",
-    itemsAlign: "center",
-    color: "white",
-    outline: "5px dashed green",
-    fontSize: "calc(10px + 4vmin)"
-});
-
 export const assertTrue = (condition, message) => {
     if (!condition) {
         throw new Error(message || "Assertion failed");
@@ -226,3 +217,61 @@ export const genFrameID = (length) => {
     }
     return result;
 };
+
+// accepts an array of image URLs
+// waits for them to load
+// returns an array of those loaded HTMLimageElements
+export async function loadImages(imageUrlArray) {
+    const promiseArray = []; // create an array for promises
+    const imageArray = []; // array for the images
+
+    for (let imageUrl of imageUrlArray) {
+        promiseArray.push(new Promise(resolve => {
+            const img = new Image();
+            img.onload = resolve;
+            img.src = imageUrl;
+            imageArray.push(img);
+        }));
+    }
+
+    await Promise.all(promiseArray); // wait for all the images to be loaded
+    console.log("all images loaded");
+    return imageArray;
+}
+
+// accepts an image object
+// returns the data from that image
+export function getImageData(img) {
+    // create in-memory canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = IMAGE_PIXEL_LENGTH;
+    canvas.height = IMAGE_PIXEL_LENGTH;
+    const context = canvas.getContext("2d");
+
+    // scale image to fit canvas
+    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    const x = (canvas.width / 2) - (img.width / 2) * scale;
+    const y = (canvas.height / 2) - (img.height / 2) * scale;
+
+    // draw the image to the canvas
+    context.drawImage(img, x, y, img.width * scale, img.height * scale);
+    // grab then return the image data from the new canvas
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    return imageData;
+}
+
+
+// Converts image data from a canvas into an RGB color array
+export function getRGBArray(imageData) {
+    const data = imageData.data;
+    assertTrue((data.length / 4) === FRAME_PIXEL_COUNT, "Unexpected data size in uploadImage");
+    var result = new Array(0);
+    for (let i = 0; i < data.length; i += 4) {
+        // Add the RGB array to the result
+        result.push(data[i]);
+        result.push(data[i + 1]);
+        result.push(data[i + 2]);
+    }
+    assertTrue(result.length === FRAME_PIXEL_COUNT * 3, "Unexpected array size in uploadImage");
+    return new Uint8Array(result);
+}

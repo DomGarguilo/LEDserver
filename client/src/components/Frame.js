@@ -12,9 +12,13 @@ class Frame extends Component {
 
     render() {
         console.log('rendering styled frame');
+        const { frame } = this.props;
+        if (!frame) {
+            return null; // or any other fallback UI
+        }
         return (
             <Wrapper>
-                <StyledFrame frame={this.props.frame} pixelSize={pixelSize} />
+                <StyledFrame frame={frame} pixelSize={pixelSize} />
             </Wrapper>
         )
     }

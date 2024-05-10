@@ -7,7 +7,7 @@ class FrameList extends PureComponent {
 
     render() {
         const { metadata, frames, dragSwitch } = this.props;
-        if (!metadata || !metadata.frameOrder) {
+        if (!metadata || !metadata.frameOrder || frames.size === 0) {
             return null;
         }
         return (
