@@ -1,6 +1,10 @@
 .Header {
   text-align: center;
-  outline: 5px dotted blue;
+  height: 100;
+  background-color: grey;
+  align-items: center;
+  color: white;
+  font-size: calc(10px + 4vmin);
 }
 
 .Animation-queue {

@@ -56,15 +56,6 @@ export const getFrameStyle = () => ({
     display: "flex"
 });
 
-export const getHeaderStyle = () => ({
-    height: 300,
-    backgroundColor: "grey",
-    itemsAlign: "center",
-    color: "white",
-    outline: "5px dashed green",
-    fontSize: "calc(10px + 4vmin)"
-});
-
 export const assertTrue = (condition, message) => {
     if (!condition) {
         throw new Error(message || "Assertion failed");

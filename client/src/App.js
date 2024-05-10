@@ -1,7 +1,6 @@
 import { Component } from "react";
-import Header from './components/Header';
 import AnimationContainer from './components/AnimationContainer';
-import { fetchMetadataFromServer, fetchFrameDataFromServer, sendStateToServer } from 'utils';
+import { fetchMetadataFromServer, fetchFrameDataFromServer, sendStateToServer, getHeaderStyle } from 'utils';
 import Modal from './components/Modal';
 
 import './App.css';
@@ -162,7 +161,10 @@ class App extends Component {
 
     return (
       <>
-        <Header sendStateToServer={this.sendStateToServer} openCreateModal={this.openModalForNewAnimation} />
+        <div className="Header">
+          <button onClick={this.openModalForNewAnimation}>Create New Animation</button>
+          <button onClick={this.sendStateToServer}>Save</button>
+        </div>
         <AnimationContainer
           metadataArray={metadataArray}
           frames={frames}
