@@ -55,7 +55,7 @@ class AnimationContainer extends Component {
                                     metadata={metadata}
                                     frames={this.props.frames}
                                     index={index}
-                                    removeAnimation={this.props.removeAnimation}
+                                    removeAnimation={() => this.props.removeAnimation(metadata.animationID)}
                                     key={metadata.animationID}
                                     edit={() => this.props.setActiveAnimationID(metadata.animationID)}
                                 />

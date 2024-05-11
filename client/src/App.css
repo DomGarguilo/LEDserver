@@ -43,13 +43,45 @@
   box-shadow: 0 0 2px 0 rgba(10, 10, 10, 0.29);
 }
 
-.react-switch-checkbox:checked + .react-switch-label .react-switch-button {
+.react-switch-checkbox:checked+.react-switch-label .react-switch-button {
   left: calc(100% - 2px);
   transform: translateX(-100%);
 }
 
 .react-switch-label:active .react-switch-button {
   width: 60px;
+}
+
+.wholeBoxButton {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  color: #333;
+  font-size: 16px;
+  padding: 10px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  width: 100%;
+  display: block;
+  text-align: center;
+}
+
+.wholeBoxButton:hover,
+.wholeBoxButton:focus {
+  color: #555;
+  background-color: #e6e6e6;
+}
+
+.wholeBoxButton:active {
+  color: #777;
+  background-color: #ddd;
+}
+
+.wholeBoxButtonContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding-left: 5px;
 }
 
 /* .dish {
