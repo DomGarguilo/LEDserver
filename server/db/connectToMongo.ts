@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-import mongoose from 'mongoose';
+import mongoose, { ConnectOptions } from 'mongoose';
 
 const mongoPath = process.env.DATABASE_URL;
 
@@ -12,9 +12,10 @@ if (!mongoPath) {
 const connectToMongo = async () => {
   try {
     mongoose.set('strictQuery', true);
-    mongoose.connect(mongoPath);
+    await mongoose.connect(mongoPath);
+    console.log('Connected to MongoDB');
   } catch (error) {
-    console.error(error);
+    console.error('Failed to connect to MongoDB:', error);
     process.exit(1);
   }
 
