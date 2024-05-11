@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-import mongoose, { ConnectOptions } from 'mongoose';
+import mongoose from 'mongoose';
 
 const mongoPath = process.env.DATABASE_URL;
 
