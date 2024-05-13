@@ -37,6 +37,21 @@ class Modal extends Component {
     this.onImageChange = this.onImageChange.bind(this);
   }
 
+  backdropRef = React.createRef();
+
+  handleMouseDown = (event) => {
+    if (event.target === this.backdropRef.current) {
+      this.mouseDownOnBackdrop = true;
+    }
+  };
+
+  handleMouseUp = (event) => {
+    if (event.target === this.backdropRef.current && this.mouseDownOnBackdrop) {
+      this.props.closeModal();
+    }
+    this.mouseDownOnBackdrop = false;
+  };
+
   handleSave = () => {
     const { localMetadata, frames } = this.state;
     if (frames.size < 1) {
@@ -142,7 +157,7 @@ class Modal extends Component {
     const { localMetadata, frames } = this.state;
 
     return (
-      <div style={modalStyles.backdrop} onClick={this.props.closeModal}>
+      <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
         <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
           {this.props.isNewAnimation && (
             <input

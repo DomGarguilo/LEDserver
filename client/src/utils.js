@@ -51,7 +51,7 @@ export const getWholeBoxStyle = (isDraggingOver) => ({
 export const getFrameListStyle = (isDraggingOver) => ({
     background: isDraggingOver ? "lightpurple" : "lightgrey",
     padding: 4,
-    height: 180,
+    height: "100%",
     display: "flex",
     overflow: "auto",
 });
