@@ -72,7 +72,8 @@ class Modal extends Component {
     super(props);
     this.state = {
       localMetadata: (props.metadata && Object.keys(props.metadata).length > 0) ? props.metadata : this.getDefaultMetadata(),
-      frames: props.frames && props.frames.size > 0 ? props.frames : new Map()
+      frames: props.frames && props.frames.size > 0 ? props.frames : new Map(),
+      hasUnsavedChanges: false,
     };
     this.onImageChange = this.onImageChange.bind(this);
   }
@@ -103,6 +104,10 @@ class Modal extends Component {
     } else {
       this.props.updateMetadata(this.props.metadata.animationID, localMetadata);
     }
+
+    this.setState({
+      hasUnsavedChanges: false,
+    });
   }
 
   handleSaveAndClose = () => {
@@ -136,7 +141,8 @@ class Modal extends Component {
       localMetadata: {
         ...prevState.localMetadata,
         frameDuration: newDuration
-      }
+      },
+      hasUnsavedChanges: true,
     }));
   }
 
@@ -146,7 +152,8 @@ class Modal extends Component {
       localMetadata: {
         ...prevState.localMetadata,
         repeatCount: newCount
-      }
+      },
+      hasUnsavedChanges: true,
     }));
   }
 
@@ -202,6 +209,7 @@ class Modal extends Component {
           <div style={modalStyles.topRightButtons}>
             <button onClick={this.handleSave} style={modalStyles.button}>
               <FontAwesomeIcon icon={faSave} />
+              {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
             </button>
             <button onClick={this.props.closeModal} style={modalStyles.button}>
               <FontAwesomeIcon icon={faTimes} />
