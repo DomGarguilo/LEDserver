@@ -1,8 +1,10 @@
 import React, { Component } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
-import { Reorder, loadImages, genFrameID, getImageData, getRGBArray } from "../utils"
+import { Reorder, loadImages, genFrameID, getImageData, getRGBArray } from "../utils";
 import Animation from "./Animation";
 import FrameList from "./FrameList";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const modalStyles = {
   backdrop: {
@@ -11,7 +13,7 @@ const modalStyles = {
     left: 0,
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -22,8 +24,46 @@ const modalStyles = {
     padding: '20px',
     borderRadius: '8px',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    width: '90%',
+    width: '70%',
     zIndex: 1001,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    position: 'relative', // Add this line
+  },
+  controls: {
+    display: 'flex',
+    flexDirection: 'column',
+    marginLeft: '20px',
+    marginBottom: '20px',
+  },
+  controlGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    marginBottom: '10px',
+  },
+  label: {
+    marginBottom: '5px',
+  },
+  inputField: {
+    marginBottom: '10px',
+  },
+  topRightButtons: {
+    position: 'absolute',
+    top: '20px',
+    right: '20px',
+    display: 'flex',
+    flexDirection: 'row',
+  },
+  button: {
+    marginLeft: '10px',
+    fontSize: '1rem',
+    padding: '10px 15px',
+  },
+  topSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
 };
 
@@ -159,6 +199,14 @@ class Modal extends Component {
     return (
       <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
         <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
+          <div style={modalStyles.topRightButtons}>
+            <button onClick={this.handleSave} style={modalStyles.button}>
+              <FontAwesomeIcon icon={faSave} />
+            </button>
+            <button onClick={this.props.closeModal} style={modalStyles.button}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
           {this.props.isNewAnimation && (
             <input
               type="file"
@@ -168,23 +216,32 @@ class Modal extends Component {
               style={{ display: 'block', marginBottom: '20px' }}
             />
           )}
-          <Animation metadata={localMetadata} frames={frames} />
+          <div style={modalStyles.topSection}>
+            <Animation metadata={localMetadata} frames={frames} />
+            <div style={modalStyles.controls}>
+              <div style={modalStyles.controlGroup}>
+                <label style={modalStyles.label}>Frame Duration (ms):</label>
+                <input
+                  type="number"
+                  value={localMetadata.frameDuration}
+                  onChange={this.handleFrameDurationChange}
+                  style={modalStyles.inputField}
+                />
+              </div>
+              <div style={modalStyles.controlGroup}>
+                <label style={modalStyles.label}>Repeat Count:</label>
+                <input
+                  type="number"
+                  value={localMetadata.repeatCount}
+                  onChange={this.handleRepeatCountChange}
+                  style={modalStyles.inputField}
+                />
+              </div>
+            </div>
+          </div>
           <DragDropContext onDragEnd={this.onDragEnd}>
             <FrameList metadata={localMetadata} frames={frames} dragSwitch={true} />
           </DragDropContext>
-          <input
-            type="number"
-            value={localMetadata.frameDuration}
-            onChange={this.handleFrameDurationChange}
-          />
-          <input
-            type="number"
-            value={localMetadata.repeatCount}
-            onChange={this.handleRepeatCountChange}
-          />
-          <button onClick={this.handleSave}>{this.props.isNewAnimation ? 'Insert' : 'Save'}</button>
-          <button onClick={this.handleSaveAndClose}>{this.props.isNewAnimation ? 'Insert and close' : 'Save and close'}</button>
-          <button onClick={this.props.closeModal}>Close</button>
         </div>
       </div>
     );
