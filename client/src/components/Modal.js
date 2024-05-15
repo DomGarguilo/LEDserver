@@ -132,11 +132,18 @@ class Modal extends Component {
       result.destination.index
     );
 
+    const hasOrderChanged = JSON.stringify(newFrameOrder) !== JSON.stringify(this.state.localMetadata.frameOrder);
+
+    if (!hasOrderChanged) {
+      return;
+    }
+
     this.setState(prevState => ({
       localMetadata: {
         ...prevState.localMetadata,
         frameOrder: newFrameOrder
-      }
+      },
+      hasUnsavedChanges: true,
     }));
   }
 
