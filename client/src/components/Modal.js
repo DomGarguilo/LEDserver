@@ -29,7 +29,7 @@ const modalStyles = {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
-    position: 'relative', // Add this line
+    position: 'relative',
   },
   controls: {
     display: 'flex',
@@ -88,7 +88,7 @@ class Modal extends Component {
 
   handleMouseUp = (event) => {
     if (event.target === this.backdropRef.current && this.mouseDownOnBackdrop) {
-      this.props.closeModal();
+      this.confirmClose();
     }
     this.mouseDownOnBackdrop = false;
   };
@@ -110,9 +110,14 @@ class Modal extends Component {
     });
   }
 
-  handleSaveAndClose = () => {
-    this.handleSave();
-    this.props.closeModal();
+  confirmClose = () => {
+    if (this.state.hasUnsavedChanges) {
+      if (window.confirm("You have unsaved changes. Are you sure you want to discard them?")) {
+        this.props.closeModal();
+      }
+    } else {
+      this.props.closeModal();
+    }
   };
 
   onDragEnd = (result) => {
@@ -211,7 +216,7 @@ class Modal extends Component {
               <FontAwesomeIcon icon={faSave} />
               {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
             </button>
-            <button onClick={this.props.closeModal} style={modalStyles.button} title="Close">
+            <button onClick={this.confirmClose} style={modalStyles.button} title="Close">
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
