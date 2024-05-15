@@ -219,11 +219,11 @@ class Modal extends Component {
       <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
         <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
           <div style={modalStyles.topRightButtons}>
-            <button onClick={this.handleSave} style={modalStyles.button} title="Save">
+            <button onClick={this.handleSave} className="button" title="Save">
               <FontAwesomeIcon icon={faSave} />
               {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
             </button>
-            <button onClick={this.confirmClose} style={modalStyles.button} title="Close">
+            <button onClick={this.confirmClose} className="button" title="Close">
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>

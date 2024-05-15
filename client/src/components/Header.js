@@ -1,24 +1,18 @@
 import { Component } from "react";
-import { getHeaderStyle } from "../utils"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faPlusSquare } from "@fortawesome/free-solid-svg-icons";
 
 class Header extends Component {
-    sendAppStateToServer = () => {
-        console.log('sending state to server, from header');
-        this.props.sendStateToServer();
-    }
-
     render() {
         return (
-            <div className="Header" style={getHeaderStyle()} >
-                <button onClick={this.props.openCreateModal} className="wholeBoxButton">
+            <div className="Header">
+                <button onClick={this.props.openModalForNewAnimation} className="button" title="Add new animation">
                     <FontAwesomeIcon icon={faPlusSquare} />
                 </button>
-                <button onClick={this.sendAppStateToServer} className="wholeBoxButton">
+                <button onClick={this.props.sendStateToServer} className="button" title="Save changes">
                     <FontAwesomeIcon icon={faSave} />
                 </button>
-            </div >
+            </div>
         )
     };
 }

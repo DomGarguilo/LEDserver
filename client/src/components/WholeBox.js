@@ -14,10 +14,10 @@ const WholeBox = (props) => {
                     <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
                         <Animation metadata={metadata} frames={frames} />
                         <div className="wholeBoxButtonContainer">
-                            <button onClick={edit} className="wholeBoxButton">
+                            <button onClick={edit} className="button" title="Edit animation">
                                 <FontAwesomeIcon icon={faEdit} />
                             </button>
-                            <button onClick={removeAnimation} className="wholeBoxButton">
+                            <button onClick={removeAnimation} className="button" title="Delete animation">
                                 <FontAwesomeIcon icon={faTrashAlt} />
                             </button>
                         </div>

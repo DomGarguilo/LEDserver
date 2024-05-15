@@ -1,9 +1,12 @@
 import { Component } from "react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faPlusSquare } from "@fortawesome/free-solid-svg-icons";
 import AnimationContainer from './components/AnimationContainer';
 import { fetchMetadataFromServer, fetchFrameDataFromServer, sendStateToServer, getHeaderStyle } from 'utils';
 import Modal from './components/Modal';
 
 import './App.css';
+import Header from "components/Header";
 
 class App extends Component {
   constructor(props) {
@@ -161,10 +164,7 @@ class App extends Component {
 
     return (
       <>
-        <div className="Header">
-          <button onClick={this.openModalForNewAnimation}>Create New Animation</button>
-          <button onClick={this.sendStateToServer}>Save</button>
-        </div>
+        <Header sendStateToServer={this.sendStateToServer} openModalForNewAnimation={this.openModalForNewAnimation} />
         <AnimationContainer
           metadataArray={metadataArray}
           frames={frames}
