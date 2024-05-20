@@ -11,6 +11,7 @@ class Header extends Component {
                 </button>
                 <button onClick={this.props.sendStateToServer} className="button" title="Save changes">
                     <FontAwesomeIcon icon={faSave} />
+                    {this.props.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
                 </button>
             </div>
         )

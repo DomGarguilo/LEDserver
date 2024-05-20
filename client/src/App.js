@@ -23,12 +23,23 @@ class App extends Component {
       frames: new Map(), // Map from frame IDs to frame data
       isLoading: true,
       activeAnimationID: null,  // Null for new animations, non-null for editing existing animation
-      modalOpen: false          // Generic modal open state
+      modalOpen: false,         // Generic modal open state
+      hasUnsavedChanges: false  // Track unsaved changes
     };
   }
 
+  handleBeforeUnload = (event) => {
+    if (this.state.hasUnsavedChanges) {
+      const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
+      event.returnValue = confirmationMessage;
+      return confirmationMessage;
+    }
+  };
+
   // wait for component to mount before pulling data and setting its state
   async componentDidMount() {
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+
     const metadataList = await fetchMetadataFromServer();
 
     const frames = new Map();
@@ -49,6 +60,14 @@ class App extends Component {
       activeAnimationID: null
     });
   }
+
+  componentWillUnmount() {
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+  }
+
+  setUnsavedChanges = (hasUnsavedChanges) => {
+    this.setState({ hasUnsavedChanges });
+  };
 
   openModalForNewAnimation = () => {
     this.setState({ modalOpen: true, activeAnimationID: null });
@@ -80,7 +99,7 @@ class App extends Component {
       }
 
       // replace the state with the new metadata and frames
-      return { metadataArray: newMetadata, frames: newFrames };
+      return { metadataArray: newMetadata, frames: newFrames, hasUnsavedChanges: true };
     });
   }
 
@@ -103,12 +122,12 @@ class App extends Component {
           }
         }
       }
-      return { metadataArray: newMetadata, frames: newFrames };
+      return { metadataArray: newMetadata, frames: newFrames, hasUnsavedChanges: true };
     });
   }
 
   rearrangeAnimations = (newAnimationOrder) => {
-    this.setState({ metadataArray: newAnimationOrder });
+    this.setState({ metadataArray: newAnimationOrder, hasUnsavedChanges: true });
   }
 
   /**
@@ -127,7 +146,7 @@ class App extends Component {
           return metadata;
         }
       });
-      return { metadataArray: newMetadata };
+      return { metadataArray: newMetadata, hasUnsavedChanges: true };
     });
   }
 
@@ -150,12 +169,13 @@ class App extends Component {
           return metadata;
         }
       });
-      return { metadataArray: newMetadataArray };
+      return { metadataArray: newMetadataArray, hasUnsavedChanges: true };
     });
   }
 
-  sendStateToServer() {
+  sendStateToServer = () => {
     sendStateToServer(this.state.metadataArray, this.state.frames);
+    this.setState({ hasUnsavedChanges: false });
   }
 
   render() {
@@ -164,7 +184,11 @@ class App extends Component {
 
     return (
       <>
-        <Header sendStateToServer={this.sendStateToServer} openModalForNewAnimation={this.openModalForNewAnimation} />
+        <Header
+          sendStateToServer={this.sendStateToServer}
+          openModalForNewAnimation={this.openModalForNewAnimation}
+          hasUnsavedChanges={this.state.hasUnsavedChanges}
+        />
         <AnimationContainer
           metadataArray={metadataArray}
           frames={frames}
