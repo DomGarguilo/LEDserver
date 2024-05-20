@@ -66,7 +66,6 @@ function generateFrame(pixelSize, data) {
 
 function generateCSSDetails(pixelSize) {
     return `
-        position: absolute;
         display: block;
         margin-bottom: `+ (pixelSize * 16) + `px;`
 }

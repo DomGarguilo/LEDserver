@@ -1,8 +1,10 @@
 import React, { Component } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
-import { Reorder, loadImages, genFrameID, getImageData, getRGBArray } from "../utils"
+import { Reorder, loadImages, genFrameID, getImageData, getRGBArray } from "../utils";
 import Animation from "./Animation";
 import FrameList from "./FrameList";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const modalStyles = {
   backdrop: {
@@ -11,7 +13,7 @@ const modalStyles = {
     left: 0,
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -22,8 +24,46 @@ const modalStyles = {
     padding: '20px',
     borderRadius: '8px',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    width: '90%',
+    width: '70%',
     zIndex: 1001,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  controls: {
+    display: 'flex',
+    flexDirection: 'column',
+    marginLeft: '20px',
+    marginBottom: '20px',
+  },
+  controlGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    marginBottom: '10px',
+  },
+  label: {
+    marginBottom: '5px',
+  },
+  inputField: {
+    marginBottom: '10px',
+  },
+  topRightButtons: {
+    position: 'absolute',
+    top: '20px',
+    right: '20px',
+    display: 'flex',
+    flexDirection: 'row',
+  },
+  button: {
+    marginLeft: '10px',
+    fontSize: '1rem',
+    padding: '10px 15px',
+  },
+  topSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
 };
 
@@ -32,10 +72,26 @@ class Modal extends Component {
     super(props);
     this.state = {
       localMetadata: (props.metadata && Object.keys(props.metadata).length > 0) ? props.metadata : this.getDefaultMetadata(),
-      frames: props.frames && props.frames.size > 0 ? props.frames : new Map()
+      frames: props.frames && props.frames.size > 0 ? props.frames : new Map(),
+      hasUnsavedChanges: false,
     };
     this.onImageChange = this.onImageChange.bind(this);
   }
+
+  backdropRef = React.createRef();
+
+  handleMouseDown = (event) => {
+    if (event.target === this.backdropRef.current) {
+      this.mouseDownOnBackdrop = true;
+    }
+  };
+
+  handleMouseUp = (event) => {
+    if (event.target === this.backdropRef.current && this.mouseDownOnBackdrop) {
+      this.confirmClose();
+    }
+    this.mouseDownOnBackdrop = false;
+  };
 
   handleSave = () => {
     const { localMetadata, frames } = this.state;
@@ -48,11 +104,20 @@ class Modal extends Component {
     } else {
       this.props.updateMetadata(this.props.metadata.animationID, localMetadata);
     }
+
+    this.setState({
+      hasUnsavedChanges: false,
+    });
   }
 
-  handleSaveAndClose = () => {
-    this.handleSave();
-    this.props.closeModal();
+  confirmClose = () => {
+    if (this.state.hasUnsavedChanges) {
+      if (window.confirm("You have unsaved changes. Are you sure you want to discard them?")) {
+        this.props.closeModal();
+      }
+    } else {
+      this.props.closeModal();
+    }
   };
 
   onDragEnd = (result) => {
@@ -67,11 +132,18 @@ class Modal extends Component {
       result.destination.index
     );
 
+    const hasOrderChanged = JSON.stringify(newFrameOrder) !== JSON.stringify(this.state.localMetadata.frameOrder);
+
+    if (!hasOrderChanged) {
+      return;
+    }
+
     this.setState(prevState => ({
       localMetadata: {
         ...prevState.localMetadata,
         frameOrder: newFrameOrder
-      }
+      },
+      hasUnsavedChanges: true,
     }));
   }
 
@@ -81,7 +153,8 @@ class Modal extends Component {
       localMetadata: {
         ...prevState.localMetadata,
         frameDuration: newDuration
-      }
+      },
+      hasUnsavedChanges: true,
     }));
   }
 
@@ -91,7 +164,8 @@ class Modal extends Component {
       localMetadata: {
         ...prevState.localMetadata,
         repeatCount: newCount
-      }
+      },
+      hasUnsavedChanges: true,
     }));
   }
 
@@ -142,8 +216,17 @@ class Modal extends Component {
     const { localMetadata, frames } = this.state;
 
     return (
-      <div style={modalStyles.backdrop} onClick={this.props.closeModal}>
+      <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
         <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
+          <div style={modalStyles.topRightButtons}>
+            <button onClick={this.handleSave} className="button" title="Save">
+              <FontAwesomeIcon icon={faSave} />
+              {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
+            </button>
+            <button onClick={this.confirmClose} className="button" title="Close">
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
           {this.props.isNewAnimation && (
             <input
               type="file"
@@ -153,23 +236,32 @@ class Modal extends Component {
               style={{ display: 'block', marginBottom: '20px' }}
             />
           )}
-          <Animation metadata={localMetadata} frames={frames} />
+          <div style={modalStyles.topSection}>
+            <Animation metadata={localMetadata} frames={frames} />
+            <div style={modalStyles.controls}>
+              <div style={modalStyles.controlGroup}>
+                <label style={modalStyles.label}>Frame Duration (ms):</label>
+                <input
+                  type="number"
+                  value={localMetadata.frameDuration}
+                  onChange={this.handleFrameDurationChange}
+                  style={modalStyles.inputField}
+                />
+              </div>
+              <div style={modalStyles.controlGroup}>
+                <label style={modalStyles.label}>Repeat Count:</label>
+                <input
+                  type="number"
+                  value={localMetadata.repeatCount}
+                  onChange={this.handleRepeatCountChange}
+                  style={modalStyles.inputField}
+                />
+              </div>
+            </div>
+          </div>
           <DragDropContext onDragEnd={this.onDragEnd}>
             <FrameList metadata={localMetadata} frames={frames} dragSwitch={true} />
           </DragDropContext>
-          <input
-            type="number"
-            value={localMetadata.frameDuration}
-            onChange={this.handleFrameDurationChange}
-          />
-          <input
-            type="number"
-            value={localMetadata.repeatCount}
-            onChange={this.handleRepeatCountChange}
-          />
-          <button onClick={this.handleSave}>{this.props.isNewAnimation ? 'Insert' : 'Save'}</button>
-          <button onClick={this.handleSaveAndClose}>{this.props.isNewAnimation ? 'Insert and close' : 'Save and close'}</button>
-          <button onClick={this.props.closeModal}>Close</button>
         </div>
       </div>
     );

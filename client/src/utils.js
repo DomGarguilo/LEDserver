@@ -1,5 +1,5 @@
-const SERVER_ROOT_URL = window.location.href;
-//const SERVER_ROOT_URL = 'http://localhost:5000/';
+//const SERVER_ROOT_URL = window.location.href;
+const SERVER_ROOT_URL = 'http://localhost:5000/';
 
 export const IMAGE_PIXEL_LENGTH = 16;
 export const FRAME_PIXEL_COUNT = Math.pow(IMAGE_PIXEL_LENGTH, 2);
@@ -40,14 +40,20 @@ export const getItemStyle = (isDragging, draggableStyle) => {
 
 export const getWholeBoxStyle = (isDraggingOver) => ({
     background: isDraggingOver ? "lightpurple" : "lightgrey",
-    padding: 8
+    display: "flex",
+    flexDirection: "row",
+    padding: 8,
+    overflowX: "auto",
+    alignItems: "center",
+    height: "100%",
 });
 
 export const getFrameListStyle = (isDraggingOver) => ({
     background: isDraggingOver ? "lightpurple" : "lightgrey",
     padding: 4,
-    height: 180,
-    display: "flex"
+    height: "100%",
+    display: "flex",
+    overflow: "auto",
 });
 
 export const getFrameStyle = () => ({

@@ -47,7 +47,7 @@ class AnimationContainer extends Component {
         }
         return (
             <DragDropContext onDragEnd={this.onDragEnd} onDragUpdate={this.onDragUpdate} >
-                <Droppable droppableId="droppable" type="ANIMATIONS">
+                <Droppable droppableId="droppable" type="ANIMATIONS" direction="horizontal">
                     {(provided, snapshot) => (
                         <div ref={provided.innerRef} style={getWholeBoxStyle(snapshot.isDraggingOver)} >
                             {this.props.metadataArray.map((metadata, index) => (
@@ -55,7 +55,7 @@ class AnimationContainer extends Component {
                                     metadata={metadata}
                                     frames={this.props.frames}
                                     index={index}
-                                    removeAnimation={this.props.removeAnimation}
+                                    removeAnimation={() => this.props.removeAnimation(metadata.animationID)}
                                     key={metadata.animationID}
                                     edit={() => this.props.setActiveAnimationID(metadata.animationID)}
                                 />
