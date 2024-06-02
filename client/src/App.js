@@ -1,6 +1,4 @@
 import { Component } from "react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faPlusSquare } from "@fortawesome/free-solid-svg-icons";
 import AnimationContainer from './components/AnimationContainer';
 import { fetchMetadataFromServer, fetchFrameDataFromServer, sendStateToServer, getHeaderStyle } from 'utils';
 import Modal from './components/Modal';
@@ -183,21 +181,23 @@ class App extends Component {
     const activeMetadata = activeAnimationID ? metadataArray.find(metadata => metadata.animationID === activeAnimationID) : {};
 
     return (
-      <>
+      <div className="container">
         <Header
           sendStateToServer={this.sendStateToServer}
           openModalForNewAnimation={this.openModalForNewAnimation}
           hasUnsavedChanges={this.state.hasUnsavedChanges}
         />
-        <AnimationContainer
-          metadataArray={metadataArray}
-          frames={frames}
-          isLoading={isLoading}
-          removeAnimation={this.removeAnimation}
-          rearrangeAnimations={this.rearrangeAnimations}
-          rearrangeFrames={this.rearrangeFrames}
-          setActiveAnimationID={this.openModalForEditAnimation}
-        />
+        <div className="AnimationContainer">
+          <AnimationContainer
+            metadataArray={metadataArray}
+            frames={frames}
+            isLoading={isLoading}
+            removeAnimation={this.removeAnimation}
+            rearrangeAnimations={this.rearrangeAnimations}
+            rearrangeFrames={this.rearrangeFrames}
+            setActiveAnimationID={this.openModalForEditAnimation}
+          />
+        </div>
         {modalOpen && (
           <Modal
             metadata={activeMetadata}
@@ -208,7 +208,7 @@ class App extends Component {
             isNewAnimation={!activeAnimationID}
           />
         )}
-      </>
+      </div>
     );
   }
 }
