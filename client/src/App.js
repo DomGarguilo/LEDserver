@@ -183,7 +183,7 @@ class App extends Component {
     const activeMetadata = activeAnimationID ? metadataArray.find(metadata => metadata.animationID === activeAnimationID) : {};
 
     return (
-      <>
+      <div className="container">
         <Header
           sendStateToServer={this.sendStateToServer}
           openModalForNewAnimation={this.openModalForNewAnimation}
@@ -208,7 +208,7 @@ class App extends Component {
             isNewAnimation={!activeAnimationID}
           />
         )}
-      </>
+      </div>
     );
   }
 }
