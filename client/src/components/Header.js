@@ -7,10 +7,10 @@ class Header extends Component {
         return (
             <div className="Header">
                 <button onClick={this.props.openModalForNewAnimation} className="button" title="Add new animation">
-                    <FontAwesomeIcon icon={faPlusSquare} />
+                    New Animation&nbsp;<FontAwesomeIcon icon={faPlusSquare} />
                 </button>
                 <button onClick={this.props.sendStateToServer} className="button" title="Save changes">
-                    <FontAwesomeIcon icon={faSave} />
+                    Save&nbsp;<FontAwesomeIcon icon={faSave} />
                     {this.props.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
                 </button>
             </div>
