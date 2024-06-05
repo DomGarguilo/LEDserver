@@ -29,6 +29,7 @@ export const getItemStyle = (isDragging, draggableStyle) => {
         textAlign: "right",
         border: "solid",
         display: "flex",
+        borderRadius: 6,
 
         // change background colour if dragging
         background: isDragging ? "lightgreen" : "grey",
