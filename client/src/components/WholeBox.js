@@ -2,7 +2,7 @@ import { Draggable } from "react-beautiful-dnd";
 import Animation from "./Animation";
 import { getItemStyle } from 'utils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faGripVertical, faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 
 const WholeBox = (props) => {
     const { metadata, frames, index, removeAnimation, edit } = props;
@@ -14,6 +14,9 @@ const WholeBox = (props) => {
                     <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
                         <Animation metadata={metadata} frames={frames} />
                         <div className="wholeBoxButtonContainer">
+                            <div className="drag-handle" {...provided.dragHandleProps}>
+                                <FontAwesomeIcon icon={faGripVertical} />
+                            </div>
                             <button onClick={edit} className="button" title="Edit animation">
                                 <FontAwesomeIcon icon={faEdit} />
                             </button>
