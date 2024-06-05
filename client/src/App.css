@@ -60,9 +60,8 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  margin-left: 10px;
-  margin-bottom: 5px;
   border-radius: 4px;
+  margin: 3px;
 }
 
 .button:hover {
@@ -75,10 +74,40 @@ body {
   background-color: var(--active-background-color);
 }
 
-.wholeBoxButtonContainer {
+.wholeBox {
+  cursor: move;
+  display: flex;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: var(--container-background-color);
+  border-radius: 10px;
+}
+
+.animation-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.controls-container {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 100%;
-  padding-left: 5px;
+  padding-left: 10px;
+}
+
+.drag-handle {
+  cursor: move;
+  color: var(--text-color);
+  font-size: 20px;
+  display: flex;
+  justify-content: right;
+  align-items: center;
+}
+
+.buttons-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }

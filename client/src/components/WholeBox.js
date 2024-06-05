@@ -10,22 +10,26 @@ const WholeBox = (props) => {
     return (
         <Draggable key={metadata.animationID} draggableId={metadata.animationID} index={index} isDragDisabled={false}>
             {(provided, snapshot) => (
-                <span {...provided.dragHandleProps}>
-                    <div ref={provided.innerRef} {...provided.draggableProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)} >
-                        <Animation metadata={metadata} frames={frames} />
-                        <div className="wholeBoxButtonContainer">
-                            <div className="drag-handle" {...provided.dragHandleProps}>
+                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
+                    <div className="wholeBox">
+                        <div className="animation-container">
+                            <Animation metadata={metadata} frames={frames} />
+                        </div>
+                        <div className="controls-container">
+                            <div className="drag-handle">
                                 <FontAwesomeIcon icon={faGripVertical} />
                             </div>
-                            <button onClick={edit} className="button" title="Edit animation">
-                                <FontAwesomeIcon icon={faEdit} />
-                            </button>
-                            <button onClick={removeAnimation} className="button" title="Delete animation">
-                                <FontAwesomeIcon icon={faTrashAlt} />
-                            </button>
+                            <div className="buttons-container">
+                                <button onClick={edit} className="button" title="Edit animation">
+                                    <FontAwesomeIcon icon={faEdit} />
+                                </button>
+                                <button onClick={removeAnimation} className="button" title="Delete animation">
+                                    <FontAwesomeIcon icon={faTrashAlt} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </span>
+                </div>
             )}
         </Draggable>
     );
