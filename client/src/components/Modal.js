@@ -220,11 +220,11 @@ class Modal extends Component {
         <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
           <div style={modalStyles.topRightButtons}>
             <button onClick={this.handleSave} className="button" title="Save">
-              <FontAwesomeIcon icon={faSave} />
+              Insert&nbsp;<FontAwesomeIcon icon={faSave} />
               {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
             </button>
             <button onClick={this.confirmClose} className="button" title="Close">
-              <FontAwesomeIcon icon={faTimes} />
+              Close&nbsp;<FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
           {this.props.isNewAnimation && (

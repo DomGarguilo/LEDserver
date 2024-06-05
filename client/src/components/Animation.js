@@ -36,7 +36,7 @@ ${(props) =>  generateCSSFrameSet(props.pixelSize, props.frames, props.animation
 const Wrapper = styled.section`
     width: 180px;
     height: 180px;
-    background: papayawhip;
+    background: black;
     overflow: hidden;
 `;
 
