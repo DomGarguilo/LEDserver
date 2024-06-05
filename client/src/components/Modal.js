@@ -105,9 +105,7 @@ class Modal extends Component {
       this.props.updateMetadata(this.props.metadata.animationID, localMetadata);
     }
 
-    this.setState({
-      hasUnsavedChanges: false,
-    });
+    this.props.closeModal();
   }
 
   confirmClose = () => {
@@ -219,8 +217,8 @@ class Modal extends Component {
       <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
         <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
           <div style={modalStyles.topRightButtons}>
-            <button onClick={this.handleSave} className="button" title="Save">
-              Insert&nbsp;<FontAwesomeIcon icon={faSave} />
+            <button onClick={this.handleSave} className="button" title={this.state.isNewAnimation ? "Insert" : "Save"}>
+              {this.props.isNewAnimation ? "Insert" : "Save"}&nbsp;<FontAwesomeIcon icon={faSave} />
               {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
             </button>
             <button onClick={this.confirmClose} className="button" title="Close">
