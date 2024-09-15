@@ -249,24 +249,51 @@ export async function loadImages(imageUrlArray) {
 // accepts an image object
 // returns the data from that image
 export function getImageData(img) {
-    // create in-memory canvas
-    const canvas = document.createElement("canvas");
-    canvas.width = IMAGE_PIXEL_LENGTH;
-    canvas.height = IMAGE_PIXEL_LENGTH;
-    const context = canvas.getContext("2d");
+    // Draw the source image to get its pixel data
+    const srcCanvas = document.createElement("canvas");
+    const srcContext = srcCanvas.getContext("2d");
+    srcCanvas.width = img.width;
+    srcCanvas.height = img.height;
+    srcContext.drawImage(img, 0, 0, img.width, img.height);
+    
+    // Get the source image pixel data
+    const srcData = srcContext.getImageData(0, 0, img.width, img.height);
+    const srcPixels = srcData.data;
+    
+    // Create an in-memory canvas for the destination image
+    const dstCanvas = document.createElement("canvas");
+    const dstContext = dstCanvas.getContext("2d");
+    dstCanvas.width = IMAGE_PIXEL_LENGTH;
+    dstCanvas.height = IMAGE_PIXEL_LENGTH;
+    
+    // Create a new ImageData object for the destination image
+    const dstData = dstContext.createImageData(dstCanvas.width, dstCanvas.height);
+    const dstPixels = dstData.data;
 
-    // scale image to fit canvas
-    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-    const x = (canvas.width / 2) - (img.width / 2) * scale;
-    const y = (canvas.height / 2) - (img.height / 2) * scale;
+    // Perform nearest neighbor sampling from the source image to the destination image
+    for (let dstY = 0; dstY < dstCanvas.height; dstY++) {
+        for (let dstX = 0; dstX < dstCanvas.width; dstX++) {
+            // Calculate the corresponding pixel in the source image (nearest neighbor)
+            const srcX = Math.floor(dstX * srcCanvas.width / dstCanvas.width);
+            const srcY = Math.floor(dstY * srcCanvas.height / dstCanvas.height);
 
-    // draw the image to the canvas
-    context.drawImage(img, x, y, img.width * scale, img.height * scale);
-    // grab then return the image data from the new canvas
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    return imageData;
+            // Calculate the index of the pixel in the source image
+            const srcIndex = (srcY * srcCanvas.width + srcX) * 4; // 4 bytes per pixel (RGBA)
+
+            // Calculate the index of the pixel in the destination image
+            const dstIndex = (dstY * dstCanvas.width + dstX) * 4;
+
+            // Copy the RGBA values from the source to the destination
+            dstPixels[dstIndex + 0] = srcPixels[srcIndex + 0]; // Red
+            dstPixels[dstIndex + 1] = srcPixels[srcIndex + 1]; // Green
+            dstPixels[dstIndex + 2] = srcPixels[srcIndex + 2]; // Blue
+            dstPixels[dstIndex + 3] = srcPixels[srcIndex + 3]; // Alpha
+        }
+    }
+
+    // Return the resized image data
+    return dstData;
 }
-
 
 // Converts image data from a canvas into an RGB color array
 export function getRGBArray(imageData) {
