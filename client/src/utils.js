@@ -246,66 +246,48 @@ export async function loadImages(imageUrlArray) {
     return imageArray;
 }
 
-// accepts an image object
-// returns the data from that image
-export function getImageData(img) {
+/**
+ * Resizes an image and returns an array of RGB values.
+ * 
+ * @param {HTMLImageElement} img - The source image to be resized.
+ * @returns {Uint8Array} - The resized image represented as an array of RGB values.
+ */
+export function getResizedRGBArray(img) {
     // Draw the source image to get its pixel data
     const srcCanvas = document.createElement("canvas");
     const srcContext = srcCanvas.getContext("2d");
     srcCanvas.width = img.width;
     srcCanvas.height = img.height;
     srcContext.drawImage(img, 0, 0, img.width, img.height);
-    
+
     // Get the source image pixel data
     const srcData = srcContext.getImageData(0, 0, img.width, img.height);
     const srcPixels = srcData.data;
-    
-    // Create an in-memory canvas for the destination image
-    const dstCanvas = document.createElement("canvas");
-    const dstContext = dstCanvas.getContext("2d");
-    dstCanvas.width = IMAGE_PIXEL_LENGTH;
-    dstCanvas.height = IMAGE_PIXEL_LENGTH;
-    
-    // Create a new ImageData object for the destination image
-    const dstData = dstContext.createImageData(dstCanvas.width, dstCanvas.height);
-    const dstPixels = dstData.data;
 
-    // Perform nearest neighbor sampling from the source image to the destination image
-    for (let dstY = 0; dstY < dstCanvas.height; dstY++) {
-        for (let dstX = 0; dstX < dstCanvas.width; dstX++) {
+    // Allocate an array for the destination RGB data
+    const dstWidth = IMAGE_PIXEL_LENGTH;
+    const dstHeight = IMAGE_PIXEL_LENGTH;
+    const result = new Uint8Array(dstWidth * dstHeight * 3);
+
+    // Perform nearest neighbor sampling from the source image to the destination
+    for (let dstY = 0; dstY < dstHeight; dstY++) {
+        for (let dstX = 0; dstX < dstWidth; dstX++) {
             // Calculate the corresponding pixel in the source image (nearest neighbor)
-            const srcX = Math.floor(dstX * srcCanvas.width / dstCanvas.width);
-            const srcY = Math.floor(dstY * srcCanvas.height / dstCanvas.height);
+            const srcX = Math.floor(dstX * srcCanvas.width / dstWidth);
+            const srcY = Math.floor(dstY * srcCanvas.height / dstHeight);
 
             // Calculate the index of the pixel in the source image
             const srcIndex = (srcY * srcCanvas.width + srcX) * 4; // 4 bytes per pixel (RGBA)
 
-            // Calculate the index of the pixel in the destination image
-            const dstIndex = (dstY * dstCanvas.width + dstX) * 4;
+            // Calculate the index in the result array
+            const dstIndex = (dstY * dstWidth + dstX) * 3; // 3 bytes per pixel (RGB)
 
-            // Copy the RGBA values from the source to the destination
-            dstPixels[dstIndex + 0] = srcPixels[srcIndex + 0]; // Red
-            dstPixels[dstIndex + 1] = srcPixels[srcIndex + 1]; // Green
-            dstPixels[dstIndex + 2] = srcPixels[srcIndex + 2]; // Blue
-            dstPixels[dstIndex + 3] = srcPixels[srcIndex + 3]; // Alpha
+            // Copy the RGB values from the source to the result array
+            result[dstIndex + 0] = srcPixels[srcIndex + 0]; // Red
+            result[dstIndex + 1] = srcPixels[srcIndex + 1]; // Green
+            result[dstIndex + 2] = srcPixels[srcIndex + 2]; // Blue
         }
     }
 
-    // Return the resized image data
-    return dstData;
-}
-
-// Converts image data from a canvas into an RGB color array
-export function getRGBArray(imageData) {
-    const data = imageData.data;
-    assertTrue((data.length / 4) === FRAME_PIXEL_COUNT, "Unexpected data size in uploadImage");
-    var result = new Array(0);
-    for (let i = 0; i < data.length; i += 4) {
-        // Add the RGB array to the result
-        result.push(data[i]);
-        result.push(data[i + 1]);
-        result.push(data[i + 2]);
-    }
-    assertTrue(result.length === FRAME_PIXEL_COUNT * 3, "Unexpected array size in uploadImage");
-    return new Uint8Array(result);
+    return result;
 }
