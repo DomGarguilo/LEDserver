@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
-import { Reorder, loadImages, genFrameID, getImageData, getRGBArray } from "../utils";
+import { Reorder, loadImages, genFrameID, getResizedRGBArray } from "../utils";
 import Animation from "./Animation";
 import FrameList from "./FrameList";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -191,8 +191,7 @@ class Modal extends Component {
 
       for (let img of imgArray) {
         const frameId = genFrameID(16);
-        const imgData = getImageData(img);
-        const rgbArray = getRGBArray(imgData);
+        const rgbArray = getResizedRGBArray(img);
         newFrames.set(frameId, rgbArray);
         newFrameOrder.push(frameId);
       }
