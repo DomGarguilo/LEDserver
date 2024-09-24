@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
-import { Reorder, loadImages, genFrameID, getResizedRGBArray, nearestNeighborSampling, bilinearInterpolationSampling } from "../utils";
+import { Reorder, genFrameID, getResizedRGBArray } from "../utils";
 import Animation from "./Animation";
 import FrameList from "./FrameList";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
