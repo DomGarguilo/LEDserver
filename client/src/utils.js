@@ -247,12 +247,91 @@ export async function loadImages(imageUrlArray) {
 }
 
 /**
- * Resizes an image and returns an array of RGB values.
+ * Performs nearest neighbor sampling on the source pixels.
+ * 
+ * @param {Uint8ClampedArray} srcPixels - The source pixel data (RGBA).
+ * @param {number} srcWidth - Width of the source image.
+ * @param {number} srcHeight - Height of the source image.
+ * @param {number} dstWidth - Desired width of the resized image.
+ * @param {number} dstHeight - Desired height of the resized image.
+ * @returns {Uint8Array} - The resized image as an RGB array.
+ */
+export function nearestNeighborSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight) {
+    const result = new Uint8Array(dstWidth * dstHeight * 3);
+
+    for (let dstY = 0; dstY < dstHeight; dstY++) {
+        for (let dstX = 0; dstX < dstWidth; dstX++) {
+            const srcX = Math.floor(dstX * srcWidth / dstWidth);
+            const srcY = Math.floor(dstY * srcHeight / dstHeight);
+            const srcIndex = (srcY * srcWidth + srcX) * 4; // RGBA
+            const dstIndex = (dstY * dstWidth + dstX) * 3; // RGB
+
+            result[dstIndex + 0] = srcPixels[srcIndex + 0]; // Red
+            result[dstIndex + 1] = srcPixels[srcIndex + 1]; // Green
+            result[dstIndex + 2] = srcPixels[srcIndex + 2]; // Blue
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Performs bilinear interpolation sampling on the source pixels.
+ * 
+ * @param {Uint8ClampedArray} srcPixels - The source pixel data (RGBA).
+ * @param {number} srcWidth - Width of the source image.
+ * @param {number} srcHeight - Height of the source image.
+ * @param {number} dstWidth - Desired width of the resized image.
+ * @param {number} dstHeight - Desired height of the resized image.
+ * @returns {Uint8Array} - The resized image as an RGB array.
+ */
+export function bilinearInterpolationSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight) {
+    const result = new Uint8Array(dstWidth * dstHeight * 3);
+
+    for (let dstY = 0; dstY < dstHeight; dstY++) {
+        const srcY = dstY * (srcHeight - 1) / (dstHeight - 1);
+        const y = Math.floor(srcY);
+        const y_diff = srcY - y;
+
+        for (let dstX = 0; dstX < dstWidth; dstX++) {
+            const srcX = dstX * (srcWidth - 1) / (dstWidth - 1);
+            const x = Math.floor(srcX);
+            const x_diff = srcX - x;
+
+            const indexA = (y * srcWidth + x) * 4;
+            const indexB = (y * srcWidth + Math.min(x + 1, srcWidth - 1)) * 4;
+            const indexC = (Math.min(y + 1, srcHeight - 1) * srcWidth + x) * 4;
+            const indexD = (Math.min(y + 1, srcHeight - 1) * srcWidth + Math.min(x + 1, srcWidth - 1)) * 4;
+
+            const dstIndex = (dstY * dstWidth + dstX) * 3;
+
+            for (let channel = 0; channel < 3; channel++) { // RGB channels
+                const A = srcPixels[indexA + channel];
+                const B = srcPixels[indexB + channel];
+                const C = srcPixels[indexC + channel];
+                const D = srcPixels[indexD + channel];
+
+                const value = A * (1 - x_diff) * (1 - y_diff) +
+                    B * x_diff * (1 - y_diff) +
+                    C * y_diff * (1 - x_diff) +
+                    D * x_diff * y_diff;
+
+                result[dstIndex + channel] = Math.round(value);
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Resizes an image and returns an array of RGB values using the specified sampling method.
  * 
  * @param {HTMLImageElement} img - The source image to be resized.
+ * @param {'nearest' | 'bilinear'} samplingMethod - The sampling method to use.
  * @returns {Uint8Array} - The resized image represented as an array of RGB values.
  */
-export function getResizedRGBArray(img) {
+export function getResizedRGBArray(img, samplingMethod = 'nearest') {
     // Draw the source image to get its pixel data
     const srcCanvas = document.createElement("canvas");
     const srcContext = srcCanvas.getContext("2d");
@@ -263,30 +342,21 @@ export function getResizedRGBArray(img) {
     // Get the source image pixel data
     const srcData = srcContext.getImageData(0, 0, img.width, img.height);
     const srcPixels = srcData.data;
+    const srcWidth = img.width;
+    const srcHeight = img.height;
 
-    // Allocate an array for the destination RGB data
+    // Constants for destination image size
     const dstWidth = IMAGE_PIXEL_LENGTH;
     const dstHeight = IMAGE_PIXEL_LENGTH;
-    const result = new Uint8Array(dstWidth * dstHeight * 3);
 
-    // Perform nearest neighbor sampling from the source image to the destination
-    for (let dstY = 0; dstY < dstHeight; dstY++) {
-        for (let dstX = 0; dstX < dstWidth; dstX++) {
-            // Calculate the corresponding pixel in the source image (nearest neighbor)
-            const srcX = Math.floor(dstX * srcCanvas.width / dstWidth);
-            const srcY = Math.floor(dstY * srcCanvas.height / dstHeight);
+    let result;
 
-            // Calculate the index of the pixel in the source image
-            const srcIndex = (srcY * srcCanvas.width + srcX) * 4; // 4 bytes per pixel (RGBA)
-
-            // Calculate the index in the result array
-            const dstIndex = (dstY * dstWidth + dstX) * 3; // 3 bytes per pixel (RGB)
-
-            // Copy the RGB values from the source to the result array
-            result[dstIndex + 0] = srcPixels[srcIndex + 0]; // Red
-            result[dstIndex + 1] = srcPixels[srcIndex + 1]; // Green
-            result[dstIndex + 2] = srcPixels[srcIndex + 2]; // Blue
-        }
+    if (samplingMethod === 'nearest') {
+        result = nearestNeighborSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight);
+    } else if (samplingMethod === 'bilinear') {
+        result = bilinearInterpolationSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight);
+    } else {
+        throw new Error(`Unknown sampling method: ${samplingMethod}`);
     }
 
     return result;

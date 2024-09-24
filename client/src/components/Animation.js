@@ -6,12 +6,15 @@ const pixelSize = 10;
 
 const Animation = (props) => {
 
-    const { metadata, frames } = props;
+    const { metadata, frames, samplingTechnique } = props;
 
     // Don't render if animationFrames is undefined or empty
     if (!metadata.frameOrder || metadata.frameOrder.length === 0) {
         return null;
     }
+    
+    // need to make each sampling technique unique so the browser doesn't cache the animation
+    const uniqueAnimationID = `${metadata.animationID}-${samplingTechnique}`;
 
     // Get the frames for this animation
     const animationFrames = metadata.frameOrder.map(frameId => frames.get(frameId));
@@ -19,7 +22,13 @@ const Animation = (props) => {
     const totalAnimationDuration = metadata.frameDuration * metadata.frameOrder.length;
     return (
         <Wrapper>
-            <StyledFrame animationID={metadata.animationID} pixelSize={pixelSize} frameDuration={totalAnimationDuration} repeatCount={metadata.repeatCount} frames={animationFrames} />
+            <StyledFrame 
+                animationID={uniqueAnimationID} 
+                pixelSize={pixelSize} 
+                frameDuration={totalAnimationDuration} 
+                repeatCount={metadata.repeatCount} 
+                frames={animationFrames} 
+            />
         </Wrapper>
     )
 

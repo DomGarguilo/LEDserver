@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
-import { Reorder, loadImages, genFrameID, getResizedRGBArray } from "../utils";
+import { Reorder, genFrameID, getResizedRGBArray } from "../utils";
 import Animation from "./Animation";
 import FrameList from "./FrameList";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -74,6 +74,10 @@ class Modal extends Component {
       localMetadata: (props.metadata && Object.keys(props.metadata).length > 0) ? props.metadata : this.getDefaultMetadata(),
       frames: props.frames && props.frames.size > 0 ? props.frames : new Map(),
       hasUnsavedChanges: false,
+      currentFrames: props.isNewAnimation ? new Map() : props.frames,
+      framesTech1: new Map(),
+      framesTech2: new Map(),
+      samplingTechnique: 'nearest',
     };
     this.onImageChange = this.onImageChange.bind(this);
   }
@@ -94,13 +98,15 @@ class Modal extends Component {
   };
 
   handleSave = () => {
-    const { localMetadata, frames } = this.state;
-    if (frames.size < 1) {
-      return;
-    }
+    const { localMetadata } = this.state;
+    const { isNewAnimation } = this.props;
 
-    if (this.props.isNewAnimation) {
-      this.props.addAnimation(localMetadata, frames);
+    if (isNewAnimation) {
+      const { currentFrames } = this.state;
+      if (currentFrames.size < 1) {
+        return;
+      }
+      this.props.addAnimation(localMetadata, currentFrames);
     } else {
       this.props.updateMetadata(this.props.metadata.animationID, localMetadata);
     }
@@ -182,26 +188,50 @@ class Modal extends Component {
     }
 
     const files = Array.from(event.target.files);
-    const imgURLarray = files.map(file => URL.createObjectURL(file));
 
     try {
-      const imgArray = await loadImages(imgURLarray);
-      const newFrames = new Map();
+      // Load all images concurrently
+      const imgArray = await Promise.all(
+        files.map(file => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              resolve(img);
+              URL.revokeObjectURL(img.src); // Free up memory
+            };
+            img.onerror = (e) => {
+              reject(new Error("Failed to load image"));
+            };
+            img.src = URL.createObjectURL(file);
+          });
+        })
+      );
+
+      const framesTech1 = new Map();
+      const framesTech2 = new Map();
       const newFrameOrder = [];
 
       for (let img of imgArray) {
         const frameId = genFrameID(16);
-        const rgbArray = getResizedRGBArray(img);
-        newFrames.set(frameId, rgbArray);
+
+        // Get resized RGB arrays using both sampling methods
+        const rgbArrayNearest = getResizedRGBArray(img, 'nearest');
+        const rgbArrayBilinear = getResizedRGBArray(img, 'bilinear');
+
+        framesTech1.set(frameId, rgbArrayNearest);
+        framesTech2.set(frameId, rgbArrayBilinear);
         newFrameOrder.push(frameId);
       }
 
       this.setState(prevState => ({
+        framesTech1: framesTech1,
+        framesTech2: framesTech2,
+        currentFrames: prevState.samplingTechnique === 'nearest' ? framesTech1 : framesTech2,
         localMetadata: {
           ...prevState.localMetadata,
           frameOrder: newFrameOrder
         },
-        frames: newFrames
+        hasUnsavedChanges: true,
       }));
     } catch (error) {
       console.error("Failed to load images:", error);
@@ -209,14 +239,34 @@ class Modal extends Component {
   };
 
 
+  handleSamplingTechniqueChange = (event) => {
+    const selectedTechnique = event.target.value;
+    this.setState(prevState => {
+      let newCurrentFrames;
+      if (selectedTechnique === 'nearest') {
+        newCurrentFrames = prevState.framesTech1;
+      } else if (selectedTechnique === 'bilinear') {
+        newCurrentFrames = prevState.framesTech2;
+      } else {
+        console.error("Invalid sampling technique selected");
+        return;
+      }
+      return {
+        samplingTechnique: selectedTechnique,
+        currentFrames: newCurrentFrames,
+        hasUnsavedChanges: true,
+      };
+    });
+  }
+
   render() {
-    const { localMetadata, frames } = this.state;
+    const { localMetadata, currentFrames } = this.state;
 
     return (
       <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
         <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
           <div style={modalStyles.topRightButtons}>
-            <button onClick={this.handleSave} className="button" title={this.state.isNewAnimation ? "Insert" : "Save"}>
+            <button onClick={this.handleSave} className="button" title={this.props.isNewAnimation ? "Insert" : "Save"}>
               {this.props.isNewAnimation ? "Insert" : "Save"}&nbsp;<FontAwesomeIcon icon={faSave} />
               {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
             </button>
@@ -233,8 +283,33 @@ class Modal extends Component {
               style={{ display: 'block', marginBottom: '20px' }}
             />
           )}
+          {this.props.isNewAnimation && (
+            <div style={modalStyles.controlGroup}>
+              <label style={modalStyles.label}>Sampling Technique:</label>
+              <div>
+                <label>
+                  <input
+                    type="radio"
+                    value="nearest"
+                    checked={this.state.samplingTechnique === 'nearest'}
+                    onChange={this.handleSamplingTechniqueChange}
+                  />
+                  Nearest Neighbor Sampling
+                </label>
+                <label style={{ marginLeft: '10px' }}>
+                  <input
+                    type="radio"
+                    value="bilinear"
+                    checked={this.state.samplingTechnique === 'bilinear'}
+                    onChange={this.handleSamplingTechniqueChange}
+                  />
+                  Bilinear Interpolation Sampling
+                </label>
+              </div>
+            </div>
+          )}
           <div style={modalStyles.topSection}>
-            <Animation metadata={localMetadata} frames={frames} />
+            <Animation metadata={localMetadata} frames={currentFrames} samplingTechnique={this.state.samplingTechnique} />
             <div style={modalStyles.controls}>
               <div style={modalStyles.controlGroup}>
                 <label style={modalStyles.label}>Frame Duration (ms):</label>
@@ -257,7 +332,7 @@ class Modal extends Component {
             </div>
           </div>
           <DragDropContext onDragEnd={this.onDragEnd}>
-            <FrameList metadata={localMetadata} frames={frames} dragSwitch={true} />
+            <FrameList metadata={localMetadata} frames={currentFrames} dragSwitch={true} />
           </DragDropContext>
         </div>
       </div>
