@@ -141,13 +141,13 @@ export const sendStateToServer = async (metadataArray, frameDataMap) => {
 
 export const fetchMetadataFromServer = async () => {
     const endpoint = SERVER_ROOT_URL + 'metadata';
-    console.log('GET request for metadata from server. Endpoint: ' + endpoint);
+    console.debug('GET request for metadata from server. Endpoint: ' + endpoint);
     const response = await fetch(endpoint);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Metadata received: ' + JSON.stringify(data));
+    console.debug('Metadata received: ' + JSON.stringify(data));
     return data.metadata;
 }
 
@@ -157,47 +157,27 @@ export const fetchMetadataFromServer = async () => {
  */
 export const fetchFrameDataFromServer = async (frameID) => {
     const endpoint = SERVER_ROOT_URL + `frameData/${frameID}`;
-    console.log('GET request for frame data from server. Endpoint: ' + endpoint);
+    console.debug('GET request for frame data from server. Endpoint: ' + endpoint);
     const response = await fetch(endpoint);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     if (response.headers.get("Content-Type") === "application/octet-stream") {
         const buffer = await response.arrayBuffer();
-        console.log('Frame data received as binary');
+        console.debug('Frame data received as binary');
         return new Uint8Array(buffer);
     } else {
         throw new Error('Unexpected content type');
     }
 }
 
-// Batch fetch all frames for one animation by ID
-export const fetchFramesFromServer = async (animationID) => {
-    const endpoint = SERVER_ROOT_URL + `frames/${animationID}`;
-    console.log('GET request for batch frames from server. Endpoint: ' + endpoint);
-    const response = await fetch(endpoint);
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const items = await response.json();
-    const map = new Map();
-    items.forEach(({ frameID, data }) => {
-        const binary = atob(data);
-        const arr = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            arr[i] = binary.charCodeAt(i);
-        }
-        map.set(frameID, arr);
-    });
-    return map;
-};
-
 /**
  * Fetch a raw binary blob of all frames concatenated (each frame = 256*3 bytes) and split into a Map
+ * frameOrder: an array of frame IDs in desired order
  */
-export const fetchFramesRawFromServer = async (animationID) => {
+export const fetchFramesRawFromServer = async (animationID, frameOrder) => {
     const endpoint = SERVER_ROOT_URL + `framesRaw/${animationID}`;
-    console.log('GET request for raw batch frames from server. Endpoint: ' + endpoint);
+    console.debug('GET request for raw batch frames from server. Endpoint: ' + endpoint);
     const response = await fetch(endpoint);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     if (response.headers.get('Content-Type') !== 'application/octet-stream') {
@@ -206,14 +186,11 @@ export const fetchFramesRawFromServer = async (animationID) => {
     const buffer = await response.arrayBuffer();
     const byteArr = new Uint8Array(buffer);
     const frameLength = IMAGE_PIXEL_LENGTH * IMAGE_PIXEL_LENGTH * 3;
-    // metadata order needed to map IDs to slices; fetch metadata first
-    const metadata = await fetchMetadataFromServer();
-    const order = metadata.find(m => m.animationID === animationID).frameOrder;
     const map = new Map();
-    for (let i = 0; i < order.length; i++) {
+    for (let i = 0; i < frameOrder.length; i++) {
         const start = i * frameLength;
         const slice = byteArr.slice(start, start + frameLength);
-        map.set(order[i], slice);
+        map.set(frameOrder[i], slice);
     }
     return map;
 };
@@ -256,7 +233,7 @@ export const getJsonOrder = async () => {
     const endpoint = document.URL + 'order';
     const response = await fetch(endpoint);
     const jsonOrder = await response.json();
-    console.log('Get request to pull image order from server. Response: ' + jsonOrder.order);
+    console.debug('Get request to pull image order from server. Response: ' + jsonOrder.order);
     return jsonOrder;
 }
 

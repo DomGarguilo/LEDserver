@@ -42,7 +42,10 @@ class App extends Component {
     const frames = new Map();
     // Batch-fetch raw binary frames per animation using octet-stream endpoint
     for (const animationMetadata of metadataList) {
-      const batch = await fetchFramesRawFromServer(animationMetadata.animationID);
+      const batch = await fetchFramesRawFromServer(
+        animationMetadata.animationID,
+        animationMetadata.frameOrder
+      );
       for (const [frameId, frameData] of batch.entries()) {
         frames.set(frameId, frameData);
       }

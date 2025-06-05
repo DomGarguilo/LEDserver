@@ -181,19 +181,6 @@ app.get('/frameData/:frameId', async (req: Request, res: Response) => {
   }
 });
 
-// Batch endpoint to fetch all frames for a given animation
-app.get('/frames/:animationID', async (req: Request, res: Response) => {
-  try {
-    const animationID = req.params.animationID;
-    const frames = await fetchFramesByAnimationID(animationID);
-    const serialized = frames.map(f => ({ frameID: f.frameID, data: f.rgbValues.toString('base64') }));
-    res.json(serialized);
-  } catch (error) {
-    console.error('Error fetching frames batch:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
 // Raw binary batch endpoint: returns concatenated RGB buffers for an animation in correct frame order
 app.get('/framesRaw/:animationID', async (req: Request, res: Response) => {
   try {
