@@ -1,6 +1,6 @@
 import { Component } from "react";
 import AnimationContainer from './components/AnimationContainer';
-import { fetchMetadataFromServer, fetchFrameDataFromServer, sendStateToServer, getHeaderStyle } from 'utils';
+import { fetchMetadataFromServer, fetchFramesRawFromServer, sendStateToServer } from './utils';
 import Modal from './components/Modal';
 
 import './App.css';
@@ -39,21 +39,20 @@ class App extends Component {
     window.addEventListener('beforeunload', this.handleBeforeUnload);
 
     const metadataList = await fetchMetadataFromServer();
-
     const frames = new Map();
+    // Batch-fetch raw binary frames per animation using octet-stream endpoint
     for (const animationMetadata of metadataList) {
-      for (let i = 0; i < animationMetadata.frameOrder.length; i++) {
-        const frameId = animationMetadata.frameOrder[i];
-        if (!frames.has(frameId)) {
-          const frameData = await fetchFrameDataFromServer(frameId);
-          frames.set(frameId, frameData);
-        }
+      const batch = await fetchFramesRawFromServer(
+        animationMetadata.animationID,
+        animationMetadata.frameOrder
+      );
+      for (const [frameId, frameData] of batch.entries()) {
+        frames.set(frameId, frameData);
       }
     }
-
     this.setState({
       metadataArray: metadataList,
-      frames: frames,
+      frames,
       isLoading: false,
       activeAnimationID: null
     });

@@ -41,4 +41,17 @@ const insertFrame = async (animationID: string, frameID: string, rgbValues: Uint
     }
 };
 
-export { fetchFrame, insertFrame };
+/**
+ * Fetches all frames for a given animation ID.
+ */
+const fetchFramesByAnimationID = async (animationID: string): Promise<Array<{ frameID: string; rgbValues: Buffer }>> => {
+    try {
+        const frames = await FrameSchema.find({ animationID }, 'frameID rgbValues -_id');
+        return frames.map(f => ({ frameID: f.frameID, rgbValues: f.rgbValues }));
+    } catch (error) {
+        console.error('Error fetching frames by animationID:', error);
+        throw error;
+    }
+};
+
+export { fetchFrame, insertFrame, fetchFramesByAnimationID };
