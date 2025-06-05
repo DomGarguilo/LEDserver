@@ -1,6 +1,6 @@
 import { Component } from "react";
 import AnimationContainer from './components/AnimationContainer';
-import { fetchMetadataFromServer, fetchFramesFromServer, sendStateToServer } from './utils';
+import { fetchMetadataFromServer, fetchFramesRawFromServer, sendStateToServer } from './utils';
 import Modal from './components/Modal';
 
 import './App.css';
@@ -40,9 +40,9 @@ class App extends Component {
 
     const metadataList = await fetchMetadataFromServer();
     const frames = new Map();
-    // Batch-fetch frames per animation to reduce HTTP calls
+    // Batch-fetch raw binary frames per animation using octet-stream endpoint
     for (const animationMetadata of metadataList) {
-      const batch = await fetchFramesFromServer(animationMetadata.animationID);
+      const batch = await fetchFramesRawFromServer(animationMetadata.animationID);
       for (const [frameId, frameData] of batch.entries()) {
         frames.set(frameId, frameData);
       }

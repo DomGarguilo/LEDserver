@@ -194,6 +194,31 @@ app.get('/frames/:animationID', async (req: Request, res: Response) => {
   }
 });
 
+// Raw binary batch endpoint: returns concatenated RGB buffers for an animation in correct frame order
+app.get('/framesRaw/:animationID', async (req: Request, res: Response) => {
+  try {
+    const animationID = req.params.animationID;
+    // find metadata order for this animation
+    const meta = metadataCache.find(m => m.animationID === animationID);
+    if (!meta) {
+      return res.status(404).send('Animation metadata not found');
+    }
+    const framesList = await fetchFramesByAnimationID(animationID);
+    // sort buffers by metadata frameOrder
+    const buffers = meta.frameOrder.map(frameID => {
+      const f = framesList.find(x => x.frameID === frameID);
+      if (!f) throw new Error(`Missing frame ${frameID}`);
+      return f.rgbValues;
+    });
+    const combined = Buffer.concat(buffers);
+    res.contentType('application/octet-stream');
+    res.send(combined);
+  } catch (error) {
+    console.error('Error fetching raw frames batch:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 /**
  * Function to get the version from the name of the first firmware file found. Looks in the firmware directory.
  */

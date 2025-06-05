@@ -192,6 +192,32 @@ export const fetchFramesFromServer = async (animationID) => {
     return map;
 };
 
+/**
+ * Fetch a raw binary blob of all frames concatenated (each frame = 256*3 bytes) and split into a Map
+ */
+export const fetchFramesRawFromServer = async (animationID) => {
+    const endpoint = SERVER_ROOT_URL + `framesRaw/${animationID}`;
+    console.log('GET request for raw batch frames from server. Endpoint: ' + endpoint);
+    const response = await fetch(endpoint);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (response.headers.get('Content-Type') !== 'application/octet-stream') {
+        throw new Error('Expected octet-stream');
+    }
+    const buffer = await response.arrayBuffer();
+    const byteArr = new Uint8Array(buffer);
+    const frameLength = IMAGE_PIXEL_LENGTH * IMAGE_PIXEL_LENGTH * 3;
+    // metadata order needed to map IDs to slices; fetch metadata first
+    const metadata = await fetchMetadataFromServer();
+    const order = metadata.find(m => m.animationID === animationID).frameOrder;
+    const map = new Map();
+    for (let i = 0; i < order.length; i++) {
+        const start = i * frameLength;
+        const slice = byteArr.slice(start, start + frameLength);
+        map.set(order[i], slice);
+    }
+    return map;
+};
+
 // Assuming each pixel's data is 3 bytes (1 byte for red, 1 for green, 1 for blue)
 export const parseFrameData = (buffer) => {
     const frameData = new Uint8Array(buffer);
