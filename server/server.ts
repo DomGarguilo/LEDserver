@@ -10,7 +10,7 @@ import { genFrameID, hashString } from './utils';
 
 import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
-import { fetchFrame, insertFrame } from './db/animationOperations';
+import { fetchFrame, insertFrame, fetchFramesByAnimationID } from './db/animationOperations';
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
 import { Frame } from "./Frame";
 import { Metadata } from "./Metadata";
@@ -177,6 +177,19 @@ app.get('/frameData/:frameId', async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('Error fetching frame:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Batch endpoint to fetch all frames for a given animation
+app.get('/frames/:animationID', async (req: Request, res: Response) => {
+  try {
+    const animationID = req.params.animationID;
+    const frames = await fetchFramesByAnimationID(animationID);
+    const serialized = frames.map(f => ({ frameID: f.frameID, data: f.rgbValues.toString('base64') }));
+    res.json(serialized);
+  } catch (error) {
+    console.error('Error fetching frames batch:', error);
     res.status(500).send('Internal Server Error');
   }
 });

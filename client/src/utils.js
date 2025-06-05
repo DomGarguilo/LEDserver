@@ -165,12 +165,32 @@ export const fetchFrameDataFromServer = async (frameID) => {
     if (response.headers.get("Content-Type") === "application/octet-stream") {
         const buffer = await response.arrayBuffer();
         console.log('Frame data received as binary');
-        // Process the binary data as needed for your application
         return new Uint8Array(buffer);
     } else {
         throw new Error('Unexpected content type');
     }
 }
+
+// Batch fetch all frames for one animation by ID
+export const fetchFramesFromServer = async (animationID) => {
+    const endpoint = SERVER_ROOT_URL + `frames/${animationID}`;
+    console.log('GET request for batch frames from server. Endpoint: ' + endpoint);
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const items = await response.json();
+    const map = new Map();
+    items.forEach(({ frameID, data }) => {
+        const binary = atob(data);
+        const arr = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            arr[i] = binary.charCodeAt(i);
+        }
+        map.set(frameID, arr);
+    });
+    return map;
+};
 
 // Assuming each pixel's data is 3 bytes (1 byte for red, 1 for green, 1 for blue)
 export const parseFrameData = (buffer) => {
