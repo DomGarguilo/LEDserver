@@ -14,18 +14,112 @@ import { fetchFrame, insertFrame, fetchFramesByAnimationID } from './db/animatio
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
 import { Frame } from "./Frame";
 import { Metadata } from "./Metadata";
+import { GoogleSheetsService, createGoogleSheetsService } from "./googleSheetsService";
 
 const app = express();
 const port = process.env.PORT || 5000;
 const firmwareDirectory = path.join(__dirname, 'firmware');
 
+// Google Sheets configuration
+const SHEETS_FETCH_INTERVAL_MS = 30000; // 30 seconds
+
 let animationCache: Set<Frame> = new Set();
 let metadataCache: Metadata[] = [];
 let metadataHash: string = '';
 
+// Google Sheets integration
+let sheetsService: GoogleSheetsService | null = null;
+let fetchInterval: NodeJS.Timeout | null = null;
+let lastFetchedData: string | null = null; // Hash of last fetched grid data
+
 const updateMetadataCacheAndHash = async (metadata: Metadata[]) => {
   metadataCache = metadata;
   metadataHash = hashString(JSON.stringify(metadata));
+}
+
+/**
+ * Creates a new single-frame animation from Google Sheets data
+ * Skips if data hasn't changed since last fetch
+ */
+const createSheetAnimation = async () => {
+  if (!sheetsService) {
+    console.error('Google Sheets service not configured');
+    return;
+  }
+
+  try {
+    console.log('Fetching new frame from Google Sheets');
+    
+    // Fetch grid data first to check for changes
+    const gridData = await sheetsService.fetchGridData();
+    const gridHash = hashString(JSON.stringify(gridData));
+    
+    // Check if data has changed since last fetch
+    if (lastFetchedData === gridHash) {
+      console.log('Grid data unchanged, skipping animation creation');
+      return;
+    }
+    
+    // Data has changed, create new animation
+    const timestamp = Date.now();
+    const animationID = `sheets_${timestamp}`;
+    const frameID = genFrameID(FRAME_ID_LENGTH);
+    
+    const rgbData = sheetsService.convertGridToRGBData(gridData);
+    const newFrame = new Frame(frameID, animationID, rgbData);
+    
+    // Create new metadata for single-frame animation
+    const newMetadata = new Metadata(
+      animationID,
+      1000, // 1 second frame duration - you can adjust this
+      1,    // repeat once
+      [frameID]
+    );
+    
+    // Add frame to animation cache
+    animationCache.add(newFrame);
+    
+    // Add metadata to cache and update
+    metadataCache.push(newMetadata);
+    
+    // Insert into database
+    await insertFrame(animationID, frameID, newFrame.data);
+    await replaceMetadataArray(metadataCache);
+    updateMetadataCacheAndHash(metadataCache);
+    
+    console.log(`Created new animation ${animationID} with frame ${frameID}`);
+    
+    // Update last fetched data hash
+    lastFetchedData = gridHash;
+  } catch (error) {
+    console.error('Error creating sheet animation:', error);
+  }
+}
+
+/**
+ * Starts periodic fetching from Google Sheets
+ */
+const startPeriodicFetching = (intervalMs: number) => {
+  if (fetchInterval) {
+    clearInterval(fetchInterval);
+  }
+  
+  fetchInterval = setInterval(async () => {
+    await createSheetAnimation();
+  }, intervalMs);
+  
+  console.log(`Started periodic fetching every ${intervalMs}ms`);
+}
+
+/**
+ * Stops periodic fetching
+ */
+const stopPeriodicFetching = () => {
+  if (fetchInterval) {
+    clearInterval(fetchInterval);
+    fetchInterval = null;
+    console.log('Stopped periodic fetching');
+  }
 }
 
 /**
@@ -93,6 +187,39 @@ const pushAnimationCacheToMongo = async () => {
 
 
 connectToDbAndInitCache();
+
+// Initialize Google Sheets service if environment variables are set
+const initializeGoogleSheets = async () => {
+  const sheetsUrl = process.env.GOOGLE_SHEETS_URL;
+  const sheetId = process.env.GOOGLE_SHEETS_SHEET_ID || '0';
+
+  if (sheetsUrl) {
+    try {
+      sheetsService = createGoogleSheetsService(sheetsUrl, sheetId);
+      console.log('Google Sheets service initialized from environment variables');
+      
+      // Test fetch immediately to catch configuration issues early
+      console.log('Testing Google Sheets connection...');
+      try {
+        const testGrid = await sheetsService.fetchGridData();
+        console.log('✅ Google Sheets connection successful!');
+        console.log('Sample data from first row:', testGrid[0]?.slice(0, 5) || 'No data');
+        
+        // Start periodic fetching automatically after successful test
+        setTimeout(() => {
+          startPeriodicFetching(SHEETS_FETCH_INTERVAL_MS);
+        }, 5000); // Wait 5 seconds for DB to initialize
+      } catch (testError) {
+        console.error('❌ Google Sheets connection failed:', testError instanceof Error ? testError.message : testError);
+        console.log('Periodic fetching will NOT be started due to connection failure');
+      }
+    } catch (error) {
+      console.error('Failed to initialize Google Sheets service:', error);
+    }
+  }
+};
+
+initializeGoogleSheets();
 
 /**
  * 
@@ -334,6 +461,56 @@ app.post('/data', upload.any(), async (req, res) => {
   } catch (err) {
     console.error('Error processing request:', err);
     res.status(501).send('Error pushing data to mongo');
+  }
+});
+
+// Google Sheets endpoints
+app.post('/sheets/configure', (req: Request, res: Response) => {
+  try {
+    const { spreadsheetUrl, sheetId = '0' } = req.body;
+    
+    if (!spreadsheetUrl) {
+      return res.status(400).json({ error: 'spreadsheetUrl is required' });
+    }
+    
+    sheetsService = createGoogleSheetsService(spreadsheetUrl, sheetId);
+    res.json({ message: 'Google Sheets service configured successfully' });
+  } catch (error) {
+    console.error('Error configuring Google Sheets service:', error);
+    res.status(500).json({ error: 'Failed to configure Google Sheets service' });
+  }
+});
+
+app.post('/sheets/start-fetching', (req: Request, res: Response) => {
+  try {
+    if (!sheetsService) {
+      return res.status(400).json({ error: 'Google Sheets service not configured' });
+    }
+    
+    startPeriodicFetching(SHEETS_FETCH_INTERVAL_MS);
+    res.json({ message: `Started periodic fetching every ${SHEETS_FETCH_INTERVAL_MS}ms` });
+  } catch (error) {
+    console.error('Error starting periodic fetching:', error);
+    res.status(500).json({ error: 'Failed to start periodic fetching' });
+  }
+});
+
+app.post('/sheets/stop-fetching', (req: Request, res: Response) => {
+  stopPeriodicFetching();
+  res.json({ message: 'Stopped periodic fetching' });
+});
+
+app.post('/sheets/fetch-once', async (req: Request, res: Response) => {
+  try {
+    if (!sheetsService) {
+      return res.status(400).json({ error: 'Google Sheets service not configured' });
+    }
+    
+    await createSheetAnimation();
+    res.json({ message: 'Fetched and created new animation from sheet data' });
+  } catch (error) {
+    console.error('Error fetching frame:', error);
+    res.status(500).json({ error: 'Failed to fetch frame' });
   }
 });
 
