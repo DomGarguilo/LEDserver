@@ -20,8 +20,12 @@ const app = express();
 const port = process.env.PORT || 5000;
 const firmwareDirectory = path.join(__dirname, 'firmware');
 
-// Google Sheets configuration
-const SHEETS_FETCH_INTERVAL_MS = 30000; // 30 seconds
+const SHEETS_FETCH_INTERVAL_MS = 1 * 60 * 1000;
+const HISTORY_FRAME_DURATION_MS = 500; // Duration for each historical frame
+const CURRENT_FRAME_DURATION_MS = 10 * 60 * 1000; // 10 minutes for current frame
+
+const HISTORY_ANIMATION_ID = 'sheets_history';
+const CURRENT_ANIMATION_ID = 'sheets_current';
 
 let animationCache: Set<Frame> = new Set();
 let metadataCache: Metadata[] = [];
@@ -38,10 +42,11 @@ const updateMetadataCacheAndHash = async (metadata: Metadata[]) => {
 }
 
 /**
- * Creates a new single-frame animation from Google Sheets data
- * Skips if data hasn't changed since last fetch
+ * Updates the two-animation system with new Google Sheets data:
+ * - History animation: all previous frames with short duration
+ * - Current animation: latest frame with long duration
  */
-const createSheetAnimation = async () => {
+const updateSheetAnimations = async () => {
   if (!sheetsService) {
     console.error('Google Sheets service not configured');
     return;
@@ -49,50 +54,87 @@ const createSheetAnimation = async () => {
 
   try {
     console.log('Fetching new frame from Google Sheets');
-    
+
     // Fetch grid data first to check for changes
     const gridData = await sheetsService.fetchGridData();
     const gridHash = hashString(JSON.stringify(gridData));
-    
+
     // Check if data has changed since last fetch
     if (lastFetchedData === gridHash) {
-      console.log('Grid data unchanged, skipping animation creation');
+      console.log('Grid data unchanged, skipping animation update');
       return;
     }
-    
-    // Data has changed, create new animation
-    const timestamp = Date.now();
-    const animationID = `sheets_${timestamp}`;
+
+    // Data has changed, update animations
     const frameID = genFrameID(FRAME_ID_LENGTH);
-    
     const rgbData = sheetsService.convertGridToRGBData(gridData);
-    const newFrame = new Frame(frameID, animationID, rgbData);
-    
-    // Create new metadata for single-frame animation
-    const newMetadata = new Metadata(
-      animationID,
-      1000, // 1 second frame duration - you can adjust this
-      1,    // repeat once
-      [frameID]
-    );
-    
-    // Add frame to animation cache
+    const newFrame = new Frame(frameID, CURRENT_ANIMATION_ID, rgbData);
+
+    // Find existing history and current animations
+    let historyMetadata = metadataCache.find(m => m.animationID === HISTORY_ANIMATION_ID);
+    let currentMetadata = metadataCache.find(m => m.animationID === CURRENT_ANIMATION_ID);
+
+    // If there's an existing current frame, move it to history
+    if (currentMetadata && currentMetadata.frameOrder.length > 0) {
+      const currentFrameID = currentMetadata.frameOrder[0];
+
+      // Create history animation if it doesn't exist
+      if (!historyMetadata) {
+        historyMetadata = new Metadata(
+          HISTORY_ANIMATION_ID,
+          HISTORY_FRAME_DURATION_MS,
+          1,
+          []
+        );
+        // Insert history animation at the beginning of the array to ensure it comes first
+        metadataCache.unshift(historyMetadata);
+      }
+
+      // Move current frame to history
+      historyMetadata.frameOrder.push(currentFrameID);
+
+      // Update the frame's animationID in cache and database
+      const frameToMove = Array.from(animationCache).find(f => f.frameID === currentFrameID);
+      if (frameToMove) {
+        frameToMove.animationID = HISTORY_ANIMATION_ID;
+        await insertFrame(HISTORY_ANIMATION_ID, currentFrameID, frameToMove.data);
+      }
+    }
+
+    // Create or update current animation with new frame
+    if (currentMetadata) {
+      currentMetadata.frameOrder = [frameID];
+    } else {
+      currentMetadata = new Metadata(
+        CURRENT_ANIMATION_ID,
+        CURRENT_FRAME_DURATION_MS,
+        1,
+        [frameID]
+      );
+      // Add current animation after history (or at the end if no history)
+      const historyIndex = metadataCache.findIndex(m => m.animationID === HISTORY_ANIMATION_ID);
+      if (historyIndex >= 0) {
+        metadataCache.splice(historyIndex + 1, 0, currentMetadata);
+      } else {
+        metadataCache.push(currentMetadata);
+      }
+    }
+
+    // Add new frame to cache and database
     animationCache.add(newFrame);
-    
-    // Add metadata to cache and update
-    metadataCache.push(newMetadata);
-    
-    // Insert into database
-    await insertFrame(animationID, frameID, newFrame.data);
+    await insertFrame(CURRENT_ANIMATION_ID, frameID, newFrame.data);
+
+    // Update metadata in database
     await replaceMetadataArray(metadataCache);
     updateMetadataCacheAndHash(metadataCache);
-    
-    console.log(`Created new animation ${animationID} with frame ${frameID}`);
-    
+
+    const historyCount = historyMetadata ? historyMetadata.frameOrder.length : 0;
+    console.log(`Updated animations: ${historyCount} frames in history, 1 current frame`);
+
     // Update last fetched data hash
     lastFetchedData = gridHash;
   } catch (error) {
-    console.error('Error creating sheet animation:', error);
+    console.error('Error updating sheet animations:', error);
   }
 }
 
@@ -103,11 +145,11 @@ const startPeriodicFetching = (intervalMs: number) => {
   if (fetchInterval) {
     clearInterval(fetchInterval);
   }
-  
+
   fetchInterval = setInterval(async () => {
-    await createSheetAnimation();
+    await updateSheetAnimations();
   }, intervalMs);
-  
+
   console.log(`Started periodic fetching every ${intervalMs}ms`);
 }
 
@@ -197,14 +239,18 @@ const initializeGoogleSheets = async () => {
     try {
       sheetsService = createGoogleSheetsService(sheetsUrl, sheetId);
       console.log('Google Sheets service initialized from environment variables');
-      
+
       // Test fetch immediately to catch configuration issues early
       console.log('Testing Google Sheets connection...');
       try {
         const testGrid = await sheetsService.fetchGridData();
         console.log('✅ Google Sheets connection successful!');
         console.log('Sample data from first row:', testGrid[0]?.slice(0, 5) || 'No data');
-        
+
+        // Set initial hash to enable dedup on first real fetch
+        lastFetchedData = hashString(JSON.stringify(testGrid));
+        console.log('Set initial data hash for deduplication');
+
         // Start periodic fetching automatically after successful test
         setTimeout(() => {
           startPeriodicFetching(SHEETS_FETCH_INTERVAL_MS);
@@ -468,11 +514,11 @@ app.post('/data', upload.any(), async (req, res) => {
 app.post('/sheets/configure', (req: Request, res: Response) => {
   try {
     const { spreadsheetUrl, sheetId = '0' } = req.body;
-    
+
     if (!spreadsheetUrl) {
       return res.status(400).json({ error: 'spreadsheetUrl is required' });
     }
-    
+
     sheetsService = createGoogleSheetsService(spreadsheetUrl, sheetId);
     res.json({ message: 'Google Sheets service configured successfully' });
   } catch (error) {
@@ -486,7 +532,7 @@ app.post('/sheets/start-fetching', (req: Request, res: Response) => {
     if (!sheetsService) {
       return res.status(400).json({ error: 'Google Sheets service not configured' });
     }
-    
+
     startPeriodicFetching(SHEETS_FETCH_INTERVAL_MS);
     res.json({ message: `Started periodic fetching every ${SHEETS_FETCH_INTERVAL_MS}ms` });
   } catch (error) {
@@ -505,9 +551,9 @@ app.post('/sheets/fetch-once', async (req: Request, res: Response) => {
     if (!sheetsService) {
       return res.status(400).json({ error: 'Google Sheets service not configured' });
     }
-    
-    await createSheetAnimation();
-    res.json({ message: 'Fetched and created new animation from sheet data' });
+
+    await updateSheetAnimations();
+    res.json({ message: 'Fetched and updated sheet animations' });
   } catch (error) {
     console.error('Error fetching frame:', error);
     res.status(500).json({ error: 'Failed to fetch frame' });
