@@ -230,6 +230,49 @@ const pushAnimationCacheToMongo = async () => {
 
 connectToDbAndInitCache();
 
+/**
+ * Sets the initial deduplication hash only if the current sheet state 
+ * already exists in the database. This prevents skipping the initial
+ * import on fresh installs.
+ */
+const setInitialDeduplicationHash = async (testGrid: number[][]) => {
+  if (!sheetsService) return;
+
+  try {
+    // Convert current sheet state to RGB data (same format as stored frames)
+    const currentRgbData = sheetsService.convertGridToRGBData(testGrid);
+
+    // Check if we have any existing sheet animations
+    const currentMetadata = metadataCache.find(m => m.animationID === CURRENT_ANIMATION_ID);
+
+    if (currentMetadata && currentMetadata.frameOrder.length > 0) {
+      // Get the current frame from the database
+      const currentFrameID = currentMetadata.frameOrder[0];
+      const existingFrame = Array.from(animationCache).find(f => f.frameID === currentFrameID);
+
+      if (existingFrame) {
+        // Compare current sheet data with existing frame data
+        const dataMatches = currentRgbData.every((value, index) => value === existingFrame.data[index]);
+
+        if (dataMatches) {
+          // Current sheet state matches database, safe to set dedup hash
+          lastFetchedData = hashString(JSON.stringify(testGrid));
+          console.log('Current sheet state matches database - deduplication enabled');
+        } else {
+          console.log('Current sheet state differs from database - will update on first fetch');
+        }
+      } else {
+        console.log('Current frame not found in cache - will fetch on first run');
+      }
+    } else {
+      console.log('No existing sheet animations found - will create on first fetch');
+    }
+  } catch (error) {
+    console.error('Error checking initial sheet state:', error);
+    // Don't set hash on error - safer to fetch than to skip
+  }
+};
+
 // Initialize Google Sheets service if environment variables are set
 const initializeGoogleSheets = async () => {
   const sheetsUrl = process.env.GOOGLE_SHEETS_URL;
@@ -247,9 +290,8 @@ const initializeGoogleSheets = async () => {
         console.log('✅ Google Sheets connection successful!');
         console.log('Sample data from first row:', testGrid[0]?.slice(0, 5) || 'No data');
 
-        // Set initial hash to enable dedup on first real fetch
-        lastFetchedData = hashString(JSON.stringify(testGrid));
-        console.log('Set initial data hash for deduplication');
+        // Only set dedup hash if current sheet state already exists in database
+        await setInitialDeduplicationHash(testGrid);
 
         // Start periodic fetching automatically after successful test
         setTimeout(() => {
