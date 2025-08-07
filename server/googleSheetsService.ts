@@ -12,7 +12,7 @@ export class GoogleSheetsService {
     if (!match) {
       throw new Error('Invalid Google Sheets URL');
     }
-    
+
     this.spreadsheetId = match[1];
     this.sheetId = sheetId;
   }
@@ -22,15 +22,15 @@ export class GoogleSheetsService {
    */
   async fetchGridData(): Promise<number[][]> {
     const csvUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv&gid=${this.sheetId}`;
-    
+
     try {
       const response = await fetch(csvUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch sheet data: ${response.status} ${response.statusText}`);
       }
-      
+
       const csvText = await response.text();
-      const rows = csvText.trim().split('\n').map(row => 
+      const rows = csvText.trim().split('\n').map(row =>
         row.split(',').map(cell => {
           // Remove quotes and parse as number
           const cleaned = cell.replace(/"/g, '').trim();
@@ -68,24 +68,24 @@ export class GoogleSheetsService {
     for (let row = 0; row < 16; row++) {
       for (let col = 0; col < 16; col++) {
         const value = grid[row][col];
-        
+
         if (value === 0) {
-          // Red for 0
-          rgbData[index] = 255;   // R
-          rgbData[index + 1] = 0; // G
-          rgbData[index + 2] = 0; // B
+          // Soft red for 0
+          rgbData[index] = 180;   // R
+          rgbData[index + 1] = 60; // G
+          rgbData[index + 2] = 60; // B
         } else if (value === 1) {
-          // Green for 1
-          rgbData[index] = 0;     // R
-          rgbData[index + 1] = 255; // G
-          rgbData[index + 2] = 0; // B
+          // Soft green for 1
+          rgbData[index] = 60;     // R
+          rgbData[index + 1] = 180; // G
+          rgbData[index + 2] = 60; // B
         } else {
           // Black for any other value
           rgbData[index] = 0;     // R
           rgbData[index + 1] = 0; // G
           rgbData[index + 2] = 0; // B
         }
-        
+
         index += 3;
       }
     }
@@ -96,12 +96,12 @@ export class GoogleSheetsService {
   /**
    * Fetches grid data and converts it to a Frame object
    */
-  async fetchAsFrame(animationID: string): Promise<Frame> {
+  async fetchAsFrame(): Promise<Frame> {
     const grid = await this.fetchGridData();
     const rgbData = this.convertGridToRGBData(grid);
     const frameID = genFrameID(FRAME_ID_LENGTH);
-    
-    return new Frame(frameID, animationID, rgbData);
+
+    return new Frame(frameID, rgbData);
   }
 }
 

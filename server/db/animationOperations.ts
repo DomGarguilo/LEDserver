@@ -24,34 +24,36 @@ const fetchFrame = async (frameID: string): Promise<Buffer> => {
 };
 
 /**
- * Inserts a frame into the database for a given animation.
- * @param animationID - The ID of the animation.
+ * Inserts a frame into the database.
  * @param frameID - The ID of the frame.
  * @param rgbValues - The RGB values of the frame.
  * @throws If there is an error inserting the frame.
  */
-const insertFrame = async (animationID: string, frameID: string, rgbValues: Uint8Array) => {
+const insertFrame = async (frameID: string, rgbValues: Uint8Array) => {
     try {
-        const buffer = Buffer.from(rgbValues.buffer);
-        const frame = new FrameSchema({ animationID, frameID, rgbValues: buffer });
-        await frame.save();
+        // Validation: ensure correct length for 16x16 RGB data
+        if (rgbValues.length !== 768) {
+            throw new Error(`Invalid frame data length. Expected 768 bytes (16x16x3), got ${rgbValues.length}`);
+        }
+
+        // Validation: ensure all values are in valid RGB range (0-255)
+        for (let i = 0; i < rgbValues.length; i++) {
+            if (rgbValues[i] > 255) {
+                throw new Error(`Invalid RGB value at index ${i}: ${rgbValues[i]}. Must be 0-255`);
+            }
+        }
+
+        const buffer = Buffer.from(rgbValues);
+        // Use upsert to avoid duplicates - if frameID exists, update the data
+        await FrameSchema.findOneAndUpdate(
+            { frameID },
+            { rgbValues: buffer },
+            { upsert: true, new: true }
+        );
     } catch (error) {
         console.error('Error inserting frame:', error);
         throw error;
     }
 };
 
-/**
- * Fetches all frames for a given animation ID.
- */
-const fetchFramesByAnimationID = async (animationID: string): Promise<Array<{ frameID: string; rgbValues: Buffer }>> => {
-    try {
-        const frames = await FrameSchema.find({ animationID }, 'frameID rgbValues -_id');
-        return frames.map(f => ({ frameID: f.frameID, rgbValues: f.rgbValues }));
-    } catch (error) {
-        console.error('Error fetching frames by animationID:', error);
-        throw error;
-    }
-};
-
-export { fetchFrame, insertFrame, fetchFramesByAnimationID };
+export { fetchFrame, insertFrame };

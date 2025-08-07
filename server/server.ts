@@ -10,7 +10,7 @@ import { genFrameID, hashString } from './utils';
 
 import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
-import { fetchFrame, insertFrame, fetchFramesByAnimationID } from './db/animationOperations';
+import { fetchFrame, insertFrame } from './db/animationOperations';
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
 import { Frame } from "./Frame";
 import { Metadata } from "./Metadata";
@@ -20,9 +20,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 const firmwareDirectory = path.join(__dirname, 'firmware');
 
-const SHEETS_FETCH_INTERVAL_MS = 1 * 60 * 1000;
+const SHEETS_FETCH_INTERVAL_MS = 5 * 1000;
 const HISTORY_FRAME_DURATION_MS = 500; // Duration for each historical frame
-const CURRENT_FRAME_DURATION_MS = 10 * 60 * 1000; // 10 minutes for current frame
+const CURRENT_FRAME_DURATION_MS = 2 * 60 * 1000; // 10 minutes for current frame
 
 const HISTORY_ANIMATION_ID = 'sheets_history';
 const CURRENT_ANIMATION_ID = 'sheets_current';
@@ -68,7 +68,7 @@ const updateSheetAnimations = async () => {
     // Data has changed, update animations
     const frameID = genFrameID(FRAME_ID_LENGTH);
     const rgbData = sheetsService.convertGridToRGBData(gridData);
-    const newFrame = new Frame(frameID, CURRENT_ANIMATION_ID, rgbData);
+    const newFrame = new Frame(frameID, rgbData);
 
     // Find existing history and current animations
     let historyMetadata = metadataCache.find(m => m.animationID === HISTORY_ANIMATION_ID);
@@ -90,14 +90,15 @@ const updateSheetAnimations = async () => {
         metadataCache.unshift(historyMetadata);
       }
 
-      // Move current frame to history
+      // Move current frame to history (keeping same frame ID)
       historyMetadata.frameOrder.push(currentFrameID);
 
-      // Update the frame's animationID in cache and database
+      // Copy frame data to history with same ID
       const frameToMove = Array.from(animationCache).find(f => f.frameID === currentFrameID);
       if (frameToMove) {
-        frameToMove.animationID = HISTORY_ANIMATION_ID;
-        await insertFrame(HISTORY_ANIMATION_ID, currentFrameID, frameToMove.data);
+        const historyFrame = new Frame(currentFrameID, frameToMove.data);
+        animationCache.add(historyFrame);
+        await insertFrame(currentFrameID, frameToMove.data);
       }
     }
 
@@ -122,7 +123,7 @@ const updateSheetAnimations = async () => {
 
     // Add new frame to cache and database
     animationCache.add(newFrame);
-    await insertFrame(CURRENT_ANIMATION_ID, frameID, newFrame.data);
+    await insertFrame(frameID, newFrame.data);
 
     // Update metadata in database
     await replaceMetadataArray(metadataCache);
@@ -195,7 +196,7 @@ const connectToDbAndInitCache = async () => {
           const frameData = testAnimationData[currentMetadata.animationID][j];
           const frameID = currentMetadata.frameOrder[j]
           console.log(`Inserting frame with ID ${frameID} into animation ${currentMetadata.animationID}`);
-          await insertFrame(currentMetadata.animationID, frameID, frameData);
+          await insertFrame(frameID, frameData);
         }
       }
     } else {
@@ -209,7 +210,7 @@ const connectToDbAndInitCache = async () => {
       for (let j = 0; j < currentMetadata.frameOrder.length; j++) {
         const currentFrameID = currentMetadata.frameOrder[j];
         const frameData = new Uint8Array(await fetchFrame(currentFrameID));
-        animationCache.add(new Frame(currentFrameID, currentMetadata.animationID, frameData));
+        animationCache.add(new Frame(currentFrameID, frameData));
         console.log('Added frame ' + j + ' to animation ' + currentMetadata.animationID);
       }
     }
@@ -221,14 +222,11 @@ const connectToDbAndInitCache = async () => {
 const pushAnimationCacheToMongo = async () => {
   for (const frame of animationCache) {
     const frameID: string = frame.frameID;
-    const animationID: string = frame.animationID;
     const frameData: Uint8Array = frame.data;
-    await insertFrame(animationID, frameID, frameData);
+    await insertFrame(frameID, frameData);
   }
 };
 
-
-connectToDbAndInitCache();
 
 /**
  * Sets the initial deduplication hash only if the current sheet state 
@@ -294,9 +292,7 @@ const initializeGoogleSheets = async () => {
         await setInitialDeduplicationHash(testGrid);
 
         // Start periodic fetching automatically after successful test
-        setTimeout(() => {
-          startPeriodicFetching(SHEETS_FETCH_INTERVAL_MS);
-        }, 5000); // Wait 5 seconds for DB to initialize
+        startPeriodicFetching(SHEETS_FETCH_INTERVAL_MS);
       } catch (testError) {
         console.error('❌ Google Sheets connection failed:', testError instanceof Error ? testError.message : testError);
         console.log('Periodic fetching will NOT be started due to connection failure');
@@ -307,7 +303,77 @@ const initializeGoogleSheets = async () => {
   }
 };
 
-initializeGoogleSheets();
+/**
+ * Cleans up corrupted sheet animations and ensures system integrity
+ */
+const cleanupCorruptedSheetAnimations = async () => {
+  console.log('Checking for corrupted sheet animations...');
+
+  let needsCleanup = false;
+  const corruptedAnimations: string[] = [];
+  const validSheetAnimations: string[] = [];
+
+  // Check for sheet animations with missing frame data
+  for (const metadata of metadataCache) {
+    if (metadata.animationID === HISTORY_ANIMATION_ID || metadata.animationID === CURRENT_ANIMATION_ID) {
+      let hasCorruptedFrames = false;
+
+      for (const frameID of metadata.frameOrder) {
+        const frameExists = Array.from(animationCache).some(f => f.frameID === frameID);
+        if (!frameExists) {
+          console.log(`Found corrupted animation: ${metadata.animationID} - frame ${frameID} missing`);
+          hasCorruptedFrames = true;
+          break;
+        }
+      }
+
+      if (hasCorruptedFrames) {
+        corruptedAnimations.push(metadata.animationID);
+        needsCleanup = true;
+      } else if (metadata.frameOrder.length > 0) {
+        validSheetAnimations.push(metadata.animationID);
+      }
+    }
+  }
+
+  if (needsCleanup || validSheetAnimations.length === 0) {
+    console.log('Cleaning up sheet animations...');
+
+    // Remove ALL sheet animations to ensure clean state
+    metadataCache = metadataCache.filter(m =>
+      m.animationID !== HISTORY_ANIMATION_ID && m.animationID !== CURRENT_ANIMATION_ID
+    );
+
+    // Remove orphaned sheet frames from cache
+    // Since frames no longer store animationID, we need to identify them by frameID
+    const sheetFrameIDs = new Set<string>();
+    for (const metadata of metadataCache) {
+      if (metadata.animationID === HISTORY_ANIMATION_ID || metadata.animationID === CURRENT_ANIMATION_ID) {
+        metadata.frameOrder.forEach(frameID => sheetFrameIDs.add(frameID));
+      }
+    }
+
+    const framesToRemove = Array.from(animationCache).filter(f => sheetFrameIDs.has(f.frameID));
+    framesToRemove.forEach(frame => animationCache.delete(frame));
+
+    // Update database
+    await replaceMetadataArray(metadataCache);
+    updateMetadataCacheAndHash(metadataCache);
+
+    console.log('Sheet animations cleaned up - will be recreated on next fetch');
+  } else {
+    console.log('Sheet animations are healthy');
+  }
+};
+
+// Initialize database first, then Google Sheets
+const initializeServer = async () => {
+  await connectToDbAndInitCache();
+  await cleanupCorruptedSheetAnimations();
+  await initializeGoogleSheets();
+};
+
+initializeServer();
 
 /**
  * 
@@ -405,13 +471,12 @@ app.get('/framesRaw/:animationID', async (req: Request, res: Response) => {
     if (!meta) {
       return res.status(404).send('Animation metadata not found');
     }
-    const framesList = await fetchFramesByAnimationID(animationID);
-    // sort buffers by metadata frameOrder
-    const buffers = meta.frameOrder.map(frameID => {
-      const f = framesList.find(x => x.frameID === frameID);
-      if (!f) throw new Error(`Missing frame ${frameID}`);
-      return f.rgbValues;
-    });
+
+    // Fetch frames directly by frameID in the correct order
+    const buffers = await Promise.all(
+      meta.frameOrder.map(frameID => fetchFrame(frameID))
+    );
+
     const combined = Buffer.concat(buffers);
     res.contentType('application/octet-stream');
     res.send(combined);
@@ -532,7 +597,7 @@ app.post('/data', upload.any(), async (req, res) => {
           return res.status(500).send(`Frame data not found for frameID: ${frameID}`);
         }
 
-        newAnimationData.add(new Frame(frameID, metadata.animationID, frameData));
+        newAnimationData.add(new Frame(frameID, frameData));
       }
     }
 
