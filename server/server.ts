@@ -20,7 +20,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const firmwareDirectory = path.join(__dirname, 'firmware');
 
-const SHEETS_FETCH_INTERVAL_MS = 5 * 1000;
+const SHEETS_FETCH_INTERVAL_MS = 60 * 1000;
 const HISTORY_FRAME_DURATION_MS = 500; // Duration for each historical frame
 const CURRENT_FRAME_DURATION_MS = 2 * 60 * 1000; // 10 minutes for current frame
 
