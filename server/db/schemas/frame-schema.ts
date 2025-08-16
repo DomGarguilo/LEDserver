@@ -3,19 +3,15 @@ import mongoose from 'mongoose';
 const rgbValueLength = 768; // 256 pixels * 3 RGB values per pixel
 
 interface IFrameSchema {
-    animationID: string;
     frameID: string;
     rgbValues: Buffer;
 }
 
 const FrameSchema = new mongoose.Schema<IFrameSchema>({
-    animationID: {
-        type: String,
-        required: true
-    },
     frameID: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     rgbValues: {
         type: Buffer,

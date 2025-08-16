@@ -1,4 +1,9 @@
-require('dotenv').config();
+// Load environment variables
+if (process.env.NODE_ENV !== 'production') {
+  // In development, load from .env file in project root
+  require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+}
+// In production (Docker), environment variables should be passed directly
 
 import mongoose from 'mongoose';
 

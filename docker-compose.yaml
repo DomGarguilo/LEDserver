@@ -7,6 +7,11 @@ services:
       - '5000:5000'
     depends_on:
       - mongo
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mongodb://mongo:27017/led-server
+      - GOOGLE_SHEETS_URL=${GOOGLE_SHEETS_URL}
+      - GOOGLE_SHEETS_SHEET_ID=${GOOGLE_SHEETS_SHEET_ID}
     # example firmware dir. change it or comment it out to disable firmware updates
     volumes:
       - ~/docker/LEDserver/firmware/:/app/server/build/firmware

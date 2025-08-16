@@ -10,7 +10,7 @@ import { genFrameID, hashString } from './utils';
 
 import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
-import { fetchFrame, insertFrame, fetchFramesByAnimationID } from './db/animationOperations';
+import { fetchFrame, insertFrame } from './db/animationOperations';
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
 import { Frame } from "./Frame";
 import { Metadata } from "./Metadata";
@@ -59,7 +59,7 @@ const connectToDbAndInitCache = async () => {
           const frameData = testAnimationData[currentMetadata.animationID][j];
           const frameID = currentMetadata.frameOrder[j]
           console.log(`Inserting frame with ID ${frameID} into animation ${currentMetadata.animationID}`);
-          await insertFrame(currentMetadata.animationID, frameID, frameData);
+          await insertFrame(frameID, frameData);
         }
       }
     } else {
@@ -73,7 +73,7 @@ const connectToDbAndInitCache = async () => {
       for (let j = 0; j < currentMetadata.frameOrder.length; j++) {
         const currentFrameID = currentMetadata.frameOrder[j];
         const frameData = new Uint8Array(await fetchFrame(currentFrameID));
-        animationCache.add(new Frame(currentFrameID, currentMetadata.animationID, frameData));
+        animationCache.add(new Frame(currentFrameID, frameData));
         console.log('Added frame ' + j + ' to animation ' + currentMetadata.animationID);
       }
     }
@@ -85,14 +85,18 @@ const connectToDbAndInitCache = async () => {
 const pushAnimationCacheToMongo = async () => {
   for (const frame of animationCache) {
     const frameID: string = frame.frameID;
-    const animationID: string = frame.animationID;
     const frameData: Uint8Array = frame.data;
-    await insertFrame(animationID, frameID, frameData);
+    await insertFrame(frameID, frameData);
   }
 };
 
 
-connectToDbAndInitCache();
+// Initialize database
+const initializeServer = async () => {
+  await connectToDbAndInitCache();
+};
+
+initializeServer();
 
 /**
  * 
@@ -190,13 +194,10 @@ app.get('/framesRaw/:animationID', async (req: Request, res: Response) => {
     if (!meta) {
       return res.status(404).send('Animation metadata not found');
     }
-    const framesList = await fetchFramesByAnimationID(animationID);
-    // sort buffers by metadata frameOrder
-    const buffers = meta.frameOrder.map(frameID => {
-      const f = framesList.find(x => x.frameID === frameID);
-      if (!f) throw new Error(`Missing frame ${frameID}`);
-      return f.rgbValues;
-    });
+    // Fetch frames directly by frameID in the correct order
+    const buffers = await Promise.all(
+      meta.frameOrder.map(frameID => fetchFrame(frameID))
+    );
     const combined = Buffer.concat(buffers);
     res.contentType('application/octet-stream');
     res.send(combined);
@@ -317,7 +318,7 @@ app.post('/data', upload.any(), async (req, res) => {
           return res.status(500).send(`Frame data not found for frameID: ${frameID}`);
         }
 
-        newAnimationData.add(new Frame(frameID, metadata.animationID, frameData));
+        newAnimationData.add(new Frame(frameID, frameData));
       }
     }
 
