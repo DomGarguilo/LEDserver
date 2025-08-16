@@ -471,12 +471,10 @@ app.get('/framesRaw/:animationID', async (req: Request, res: Response) => {
     if (!meta) {
       return res.status(404).send('Animation metadata not found');
     }
-
     // Fetch frames directly by frameID in the correct order
     const buffers = await Promise.all(
       meta.frameOrder.map(frameID => fetchFrame(frameID))
     );
-
     const combined = Buffer.concat(buffers);
     res.contentType('application/octet-stream');
     res.send(combined);
