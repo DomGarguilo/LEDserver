@@ -20,6 +20,7 @@ class App extends Component {
       metadataArray: [], // Array of animation metadata, each with a list of frame IDs
       frames: new Map(), // Map from frame IDs to frame data
       isLoading: true,
+      loadingStatus: {},
       activeAnimationID: null,  // Null for new animations, non-null for editing existing animation
       modalOpen: false,         // Generic modal open state
       hasUnsavedChanges: false  // Track unsaved changes
@@ -39,28 +40,61 @@ class App extends Component {
     window.addEventListener('beforeunload', this.handleBeforeUnload);
 
     const metadataList = await fetchMetadataFromServer();
-    const frames = new Map();
-    // Batch-fetch raw binary frames per animation using octet-stream endpoint
-    for (const animationMetadata of metadataList) {
-      const batch = await fetchFramesRawFromServer(
-        animationMetadata.animationID,
-        animationMetadata.frameOrder
-      );
-      for (const [frameId, frameData] of batch.entries()) {
-        frames.set(frameId, frameData);
-      }
+    const loadingStatus = {};
+    for (const metadata of metadataList) {
+      loadingStatus[metadata.animationID] = { status: 'loading' };
     }
+
     this.setState({
       metadataArray: metadataList,
-      frames,
+      frames: new Map(),
       isLoading: false,
+      loadingStatus,
       activeAnimationID: null
+    }, () => {
+      this.prefetchAnimationFrames(metadataList);
     });
   }
 
   componentWillUnmount() {
     window.removeEventListener('beforeunload', this.handleBeforeUnload);
   }
+
+  prefetchAnimationFrames = (metadataList) => {
+    for (const metadata of metadataList) {
+      this.loadFramesForAnimation(metadata);
+    }
+  };
+
+  loadFramesForAnimation = async (metadata) => {
+    try {
+      const batch = await fetchFramesRawFromServer(metadata.animationID, metadata.frameOrder);
+      this.setState(prevState => {
+        const frames = new Map(prevState.frames);
+        for (const [frameId, frameData] of batch.entries()) {
+          frames.set(frameId, frameData);
+        }
+        return {
+          frames,
+          loadingStatus: {
+            ...prevState.loadingStatus,
+            [metadata.animationID]: { status: 'ready' }
+          }
+        };
+      });
+    } catch (error) {
+      console.error(`Failed to load frames for animation ${metadata.animationID}:`, error);
+      this.setState(prevState => ({
+        loadingStatus: {
+          ...prevState.loadingStatus,
+          [metadata.animationID]: {
+            status: 'error',
+            message: error && error.message ? error.message : 'Failed to load frames'
+          }
+        }
+      }));
+    }
+  };
 
   setUnsavedChanges = (hasUnsavedChanges) => {
     this.setState({ hasUnsavedChanges });
@@ -96,7 +130,15 @@ class App extends Component {
       }
 
       // replace the state with the new metadata and frames
-      return { metadataArray: newMetadata, frames: newFrames, hasUnsavedChanges: true };
+      return {
+        metadataArray: newMetadata,
+        frames: newFrames,
+        loadingStatus: {
+          ...prevState.loadingStatus,
+          [newAnimationMetadata.animationID]: { status: 'ready' }
+        },
+        hasUnsavedChanges: true
+      };
     });
   }
 
@@ -119,7 +161,13 @@ class App extends Component {
           }
         }
       }
-      return { metadataArray: newMetadata, frames: newFrames, hasUnsavedChanges: true };
+      const { [animationID]: _removedStatus, ...restStatus } = prevState.loadingStatus;
+      return {
+        metadataArray: newMetadata,
+        frames: newFrames,
+        loadingStatus: restStatus,
+        hasUnsavedChanges: true
+      };
     });
   }
 
@@ -191,6 +239,7 @@ class App extends Component {
             metadataArray={metadataArray}
             frames={frames}
             isLoading={isLoading}
+            loadingStatus={this.state.loadingStatus}
             removeAnimation={this.removeAnimation}
             rearrangeAnimations={this.rearrangeAnimations}
             rearrangeFrames={this.rearrangeFrames}
