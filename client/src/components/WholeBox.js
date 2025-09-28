@@ -13,7 +13,7 @@ const WholeBox = (props) => {
                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}>
                     <div className="wholeBox">
                         <div className="animation-container">
-                            <Animation metadata={metadata} frames={frames} />
+                            <Animation metadata={metadata} frames={frames} samplingTechnique="queue" />
                         </div>
                         <div className="controls-container">
                             <div className="drag-handle">
