@@ -19,6 +19,10 @@ const Animation = (props) => {
     // Get the frames for this animation
     const animationFrames = metadata.frameOrder.map(frameId => frames.get(frameId));
 
+    if (animationFrames.some(frame => !(frame instanceof Uint8Array))) {
+        return null;
+    }
+
     const totalAnimationDuration = metadata.frameDuration * metadata.frameOrder.length;
     return (
         <Wrapper>

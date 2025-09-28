@@ -54,6 +54,7 @@ class AnimationContainer extends Component {
                                 <WholeBox
                                     metadata={metadata}
                                     frames={this.props.frames}
+                                    loadingStatus={this.props.loadingStatus?.[metadata.animationID]}
                                     index={index}
                                     removeAnimation={() => this.props.removeAnimation(metadata.animationID)}
                                     key={metadata.animationID}
