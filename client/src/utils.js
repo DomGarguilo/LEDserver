@@ -362,25 +362,113 @@ export function getResizedRGBArray(img, samplingMethod = 'nearest') {
     srcCanvas.height = img.height;
     srcContext.drawImage(img, 0, 0, img.width, img.height);
 
-    // Get the source image pixel data
     const srcData = srcContext.getImageData(0, 0, img.width, img.height);
-    const srcPixels = srcData.data;
-    const srcWidth = img.width;
-    const srcHeight = img.height;
+
+    return getResizedRGBArrayFromImageData(srcData, samplingMethod);
+}
+
+export function getResizedRGBArrayFromImageData(imageData, samplingMethod = 'nearest') {
+    if (!imageData || !imageData.data || typeof imageData.width !== 'number' || typeof imageData.height !== 'number') {
+        throw new Error('Invalid ImageData provided for resizing.');
+    }
+
+    return getResizedRGBArrayFromPixels(imageData.data, imageData.width, imageData.height, samplingMethod);
+}
+
+export function getResizedRGBArrayFromPixels(srcPixels, srcWidth, srcHeight, samplingMethod = 'nearest') {
+    if (!srcPixels || typeof srcWidth !== 'number' || typeof srcHeight !== 'number') {
+        throw new Error('Invalid source pixels provided for resizing.');
+    }
 
     // Constants for destination image size
     const dstWidth = IMAGE_PIXEL_LENGTH;
     const dstHeight = IMAGE_PIXEL_LENGTH;
 
-    let result;
-
     if (samplingMethod === 'nearest') {
-        result = nearestNeighborSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight);
+        return nearestNeighborSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight);
     } else if (samplingMethod === 'bilinear') {
-        result = bilinearInterpolationSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight);
-    } else {
-        throw new Error(`Unknown sampling method: ${samplingMethod}`);
+        return bilinearInterpolationSampling(srcPixels, srcWidth, srcHeight, dstWidth, dstHeight);
     }
 
-    return result;
+    throw new Error(`Unknown sampling method: ${samplingMethod}`);
+}
+
+export async function extractFramesFromGif(file) {
+    if (!file) {
+        throw new Error('No GIF file provided');
+    }
+
+    if (typeof window === 'undefined' || typeof window.ImageDecoder === 'undefined') {
+        throw new Error('GIF decoding is not supported in this environment.');
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const decoder = new window.ImageDecoder({ data: arrayBuffer, type: file.type || 'image/gif' });
+
+    try {
+        if (decoder.tracks?.ready && typeof decoder.tracks.ready.then === 'function') {
+            await decoder.tracks.ready;
+        }
+
+        const track = decoder.tracks?.selectedTrack;
+        let targetFrameCount = Number.isFinite(track?.frameCount) && track.frameCount > 0
+            ? track.frameCount
+            : Number.POSITIVE_INFINITY;
+
+        const frames = [];
+        let frameIndex = 0;
+
+        while (frameIndex < targetFrameCount) {
+            let image;
+            let metadata;
+
+            try {
+                ({ image, metadata } = await decoder.decode({ frameIndex }));
+            } catch (error) {
+                if (targetFrameCount === Number.POSITIVE_INFINITY && error instanceof DOMException) {
+                    if (error.name === 'InvalidStateError' || error.name === 'IndexSizeError') {
+                        break; // Decoder drained without a declared frame count.
+                    }
+                }
+                throw error;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = image.displayWidth;
+            canvas.height = image.displayHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            const duration = metadata && typeof metadata.duration === 'number'
+                ? Math.max(0, Math.round(metadata.duration / 1000))
+                : 0;
+
+            frames.push({ imageData, delayMs: duration });
+
+            if (typeof image.close === 'function') {
+                image.close();
+            }
+
+            frameIndex += 1;
+
+            if (targetFrameCount === Number.POSITIVE_INFINITY) {
+                const updatedCount = decoder.tracks?.selectedTrack?.frameCount;
+                if (Number.isFinite(updatedCount) && updatedCount > 0) {
+                    targetFrameCount = updatedCount;
+                }
+            }
+        }
+
+        if (frames.length === 0) {
+            throw new Error('Unable to decode GIF frames.');
+        }
+
+        return frames;
+    } finally {
+        if (typeof decoder.close === 'function') {
+            decoder.close();
+        }
+    }
 }
