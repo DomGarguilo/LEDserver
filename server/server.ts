@@ -12,7 +12,7 @@ import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
 import { fetchFrame, insertFrame } from './db/animationOperations';
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
-import { fetchAnimationCatalog, upsertCatalogEntries, archiveCatalogEntry, deleteCatalogEntry } from './db/catalogOperations';
+import { fetchAnimationCatalog, upsertCatalogEntries, archiveCatalogEntry } from './db/catalogOperations';
 import { Frame } from "./Frame";
 import { Metadata } from "./Metadata";
 
@@ -180,23 +180,6 @@ app.post('/catalog/:animationID/archive', async (req: Request, res: Response) =>
   } catch (error) {
     console.error('Error archiving animation catalog entry:', error);
     return res.status(500).send('Error archiving animation catalog entry');
-  }
-});
-
-app.delete('/catalog/:animationID', async (req: Request, res: Response) => {
-  const { animationID } = req.params;
-  console.log(`Handling DELETE request for "/catalog/${animationID}"`);
-
-  try {
-    const deleted = await deleteCatalogEntry(animationID);
-    if (!deleted) {
-      return res.status(404).send('Animation not found in catalog');
-    }
-
-    return res.status(204).send();
-  } catch (error) {
-    console.error('Error deleting animation catalog entry:', error);
-    return res.status(500).send('Error deleting animation catalog entry');
   }
 });
 

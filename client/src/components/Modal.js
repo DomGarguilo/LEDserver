@@ -1,10 +1,10 @@
 import React, { Component } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
-import { Reorder, genFrameID, getResizedRGBArray } from "../utils";
+import { Reorder, genFrameID, getResizedRGBArray, getResizedRGBArrayFromImageData, extractFramesFromGif } from "../utils";
 import Animation from "./Animation";
 import FrameList from "./FrameList";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 const modalStyles = {
   backdrop: {
@@ -50,20 +50,42 @@ const modalStyles = {
   },
   topRightButtons: {
     position: 'absolute',
-    top: '20px',
-    right: '20px',
+    top: 20,
+    right: 20,
     display: 'flex',
-    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
   },
-  button: {
-    marginLeft: '10px',
+  topButton: {
     fontSize: '1rem',
-    padding: '10px 15px',
+    padding: '10px 12px',
   },
   topSection: {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'flex-start',
+  },
+  loadingOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1100,
+  },
+  spinnerContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 12,
+    color: '#333',
+  },
+  spinnerLabel: {
+    fontSize: '1rem',
   },
 };
 
@@ -78,11 +100,26 @@ class Modal extends Component {
       framesTech1: new Map(),
       framesTech2: new Map(),
       samplingTechnique: 'nearest',
+      isProcessing: false,
     };
     this.onImageChange = this.onImageChange.bind(this);
   }
 
   backdropRef = React.createRef();
+
+  componentDidMount() {
+    document.addEventListener('keydown', this.handleKeyDown);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.handleKeyDown);
+  }
+
+  handleKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      this.confirmClose();
+    }
+  };
 
   handleMouseDown = (event) => {
     if (event.target === this.backdropRef.current) {
@@ -182,15 +219,87 @@ class Modal extends Component {
     };
   }
 
+  calculateGifFrameDuration = (frames) => {
+    if (!frames || frames.length === 0) {
+      return this.state.localMetadata.frameDuration;
+    }
+
+    const validDelays = frames
+      .map(frame => frame.delayMs)
+      .filter(delay => typeof delay === 'number' && delay > 0);
+
+    if (validDelays.length === 0) {
+      return this.state.localMetadata.frameDuration;
+    }
+
+    const averageDelay = validDelays.reduce((sum, delay) => sum + delay, 0) / validDelays.length;
+    return Math.max(20, Math.round(averageDelay));
+  };
+
   onImageChange = async (event) => {
     if (!event.target.files || event.target.files.length === 0) {
       return;
     }
 
     const files = Array.from(event.target.files);
+    event.target.value = '';
 
+    const gifFiles = files.filter(file => file.type === 'image/gif');
+
+    if (gifFiles.length > 0) {
+      if (gifFiles.length > 1 || files.length > gifFiles.length) {
+        window.alert('Please upload a single GIF or multiple static images, not both.');
+        return;
+      }
+
+      this.setState({ isProcessing: true });
+      try {
+        const gifFrames = await extractFramesFromGif(gifFiles[0]);
+
+        if (!gifFrames.length) {
+          window.alert('No frames could be extracted from the GIF.');
+          return;
+        }
+
+        const framesTech1 = new Map();
+        const framesTech2 = new Map();
+        const newFrameOrder = [];
+
+        for (const { imageData } of gifFrames) {
+          const frameId = genFrameID(16);
+          const rgbArrayNearest = getResizedRGBArrayFromImageData(imageData, 'nearest');
+          const rgbArrayBilinear = getResizedRGBArrayFromImageData(imageData, 'bilinear');
+
+          framesTech1.set(frameId, rgbArrayNearest);
+          framesTech2.set(frameId, rgbArrayBilinear);
+          newFrameOrder.push(frameId);
+        }
+
+        const frameDuration = this.calculateGifFrameDuration(gifFrames);
+
+        this.setState(prevState => ({
+          framesTech1,
+          framesTech2,
+          currentFrames: prevState.samplingTechnique === 'nearest' ? framesTech1 : framesTech2,
+          localMetadata: {
+            ...prevState.localMetadata,
+            frameDuration,
+            frameOrder: newFrameOrder
+          },
+          hasUnsavedChanges: true,
+        }));
+      } catch (error) {
+        console.error('Failed to process GIF:', error);
+        window.alert('An error occurred while processing the GIF. Please try another file.');
+      } finally {
+        this.setState({ isProcessing: false });
+      }
+
+      return;
+    }
+
+    this.setState({ isProcessing: true });
     try {
-      // Load all images concurrently
       const imgArray = await Promise.all(
         files.map(file => {
           return new Promise((resolve, reject) => {
@@ -199,7 +308,7 @@ class Modal extends Component {
               resolve(img);
               URL.revokeObjectURL(img.src); // Free up memory
             };
-            img.onerror = (e) => {
+            img.onerror = () => {
               reject(new Error("Failed to load image"));
             };
             img.src = URL.createObjectURL(file);
@@ -224,8 +333,8 @@ class Modal extends Component {
       }
 
       this.setState(prevState => ({
-        framesTech1: framesTech1,
-        framesTech2: framesTech2,
+        framesTech1,
+        framesTech2,
         currentFrames: prevState.samplingTechnique === 'nearest' ? framesTech1 : framesTech2,
         localMetadata: {
           ...prevState.localMetadata,
@@ -235,6 +344,9 @@ class Modal extends Component {
       }));
     } catch (error) {
       console.error("Failed to load images:", error);
+      window.alert('An error occurred while loading the selected images.');
+    } finally {
+      this.setState({ isProcessing: false });
     }
   };
 
@@ -260,19 +372,39 @@ class Modal extends Component {
   }
 
   render() {
-    const { localMetadata, currentFrames } = this.state;
+    const { localMetadata, currentFrames, isProcessing } = this.state;
 
     return (
       <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
-        <div style={modalStyles.content} onClick={e => e.stopPropagation()}>
+        <div style={{ ...modalStyles.content, pointerEvents: isProcessing ? 'none' : 'auto' }} onClick={e => e.stopPropagation()}>
           <div style={modalStyles.topRightButtons}>
-            <button onClick={this.handleSave} className="button" title={this.props.isNewAnimation ? "Insert" : "Save"}>
-              {this.props.isNewAnimation ? "Insert" : "Save"}&nbsp;<FontAwesomeIcon icon={faSave} />
-              {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
+            <button
+              onClick={this.confirmClose}
+              className="button"
+              style={modalStyles.topButton}
+              title="Close"
+              aria-label="Close"
+            >
+              <FontAwesomeIcon icon={faTimes} />
             </button>
-            <button onClick={this.confirmClose} className="button" title="Close">
-              Close&nbsp;<FontAwesomeIcon icon={faTimes} />
+            <button
+              onClick={this.handleSave}
+              className="button"
+              style={modalStyles.topButton}
+              title={this.props.isNewAnimation ? "Insert" : "Save"}
+              aria-label={this.props.isNewAnimation ? "Insert" : "Save"}
+            >
+              <FontAwesomeIcon icon={faSave} />
             </button>
+            {this.state.hasUnsavedChanges && (
+              <span
+                style={{ color: 'red', fontWeight: 'bold', marginLeft: 4 }}
+                title="Unsaved changes"
+                aria-label="Unsaved changes"
+              >
+                •
+              </span>
+            )}
           </div>
           {this.props.isNewAnimation && (
             <input
@@ -335,6 +467,14 @@ class Modal extends Component {
             <FrameList metadata={localMetadata} frames={currentFrames} dragSwitch={true} />
           </DragDropContext>
         </div>
+        {isProcessing && (
+          <div style={modalStyles.loadingOverlay}>
+            <div style={modalStyles.spinnerContainer}>
+              <FontAwesomeIcon icon={faSpinner} spin size="2x" />
+              <span style={modalStyles.spinnerLabel}>Processing animation...</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

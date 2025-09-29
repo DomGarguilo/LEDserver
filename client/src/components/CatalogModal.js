@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Animation from './Animation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTimes, faArchive, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTimes, faTrashAlt, faImages, faClock, faRedo } from '@fortawesome/free-solid-svg-icons';
 
 const CatalogModal = ({
   animations,
@@ -10,17 +10,56 @@ const CatalogModal = ({
   onClose,
   onAddToQueue,
   onArchiveAnimation,
-  onDeleteAnimation,
   isLoading,
 }) => {
   const animationIdSet = queueAnimationIDs instanceof Set ? queueAnimationIDs : new Set(queueAnimationIDs);
+  const backdropRef = useRef(null);
+  const mouseDownOnBackdropRef = useRef(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  const handleMouseDown = (event) => {
+    if (event.target === backdropRef.current) {
+      mouseDownOnBackdropRef.current = true;
+    }
+  };
+
+  const handleMouseUp = (event) => {
+    if (event.target === backdropRef.current && mouseDownOnBackdropRef.current) {
+      onClose();
+    }
+    mouseDownOnBackdropRef.current = false;
+  };
 
   return (
-    <div className="CatalogBackdrop" role="dialog" aria-modal="true">
-      <div className="CatalogContent">
+    <div
+      className="CatalogBackdrop"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      ref={backdropRef}
+    >
+      <div className="CatalogContent" onClick={(event) => event.stopPropagation()}>
         <div className="CatalogHeaderRow">
           <h2>Animation Catalog</h2>
-          <button className="button CatalogCloseButton" onClick={onClose} title="Close catalog">
+          <button
+            className="button CatalogCloseButton"
+            onClick={onClose}
+            title="Close catalog"
+            aria-label="Close catalog"
+          >
             <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
@@ -45,11 +84,19 @@ const CatalogModal = ({
                     )}
                   </div>
                   <div className="CatalogDetails">
-                    <div className="CatalogTitle">{animation.animationID}</div>
-                    <div className="CatalogMeta">
-                      <span>{frameOrder.length} frame{frameOrder.length === 1 ? '' : 's'}</span>
-                      <span>{animation.frameDuration} ms / frame</span>
-                      <span>Repeats: {animation.repeatCount}</span>
+                    <div className="CatalogMetaRow" aria-label="Animation details">
+                      <span className="CatalogMetaItem">
+                        <FontAwesomeIcon icon={faImages} />
+                        {frameOrder.length} frame{frameOrder.length === 1 ? '' : 's'}
+                      </span>
+                      <span className="CatalogMetaItem">
+                        <FontAwesomeIcon icon={faClock} />
+                        {animation.frameDuration} ms/frame
+                      </span>
+                      <span className="CatalogMetaItem">
+                        <FontAwesomeIcon icon={faRedo} />
+                        ×{animation.repeatCount}
+                      </span>
                     </div>
                     <div className="CatalogActions">
                       <button
@@ -66,20 +113,13 @@ const CatalogModal = ({
                         )}
                       </button>
                       <button
-                        className="button CatalogArchiveButton"
+                        className={`button CatalogDeleteButton${isQueued ? ' CatalogDeleteButton--disabled' : ''}`}
                         onClick={() => onArchiveAnimation(animation.animationID)}
-                        title="Archive this animation"
-                      >
-                        Archive&nbsp;
-                        <FontAwesomeIcon icon={faArchive} />
-                      </button>
-                      <button
-                        className="button CatalogDeleteButton"
-                        onClick={() => onDeleteAnimation(animation.animationID)}
-                        title="Delete this animation permanently"
+                        title={isQueued ? 'Remove from queue before deleting' : 'Delete this animation'}
+                        disabled={isQueued}
                       >
                         Delete&nbsp;
-                        <FontAwesomeIcon icon={faTrash} />
+                        <FontAwesomeIcon icon={faTrashAlt} />
                       </button>
                     </div>
                   </div>

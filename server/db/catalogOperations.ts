@@ -59,14 +59,4 @@ const archiveCatalogEntry = async (animationID: string): Promise<boolean> => {
   }
 };
 
-const deleteCatalogEntry = async (animationID: string): Promise<boolean> => {
-  try {
-    const result = await AnimationCatalogModel.deleteOne({ animationID });
-    return result.deletedCount !== undefined && result.deletedCount > 0;
-  } catch (error) {
-    console.error('Error deleting animation catalog entry:', error);
-    throw error;
-  }
-};
-
-export { fetchAnimationCatalog, upsertCatalogEntries, archiveCatalogEntry, deleteCatalogEntry };
+export { fetchAnimationCatalog, upsertCatalogEntries, archiveCatalogEntry };

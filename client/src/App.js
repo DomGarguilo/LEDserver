@@ -6,7 +6,6 @@ import {
   sendStateToServer,
   fetchCatalogFromServer,
   archiveCatalogAnimationOnServer,
-  deleteCatalogAnimationFromServer,
 } from './utils';
 import Modal from './components/Modal';
 import CatalogModal from './components/CatalogModal';
@@ -28,6 +27,7 @@ class App extends Component {
       metadataArray: [], // Array of animation metadata, each with a list of frame IDs
       frames: new Map(), // Map from frame IDs to frame data for the active queue
       isLoading: true,
+      loadingStatus: {},
       activeAnimationID: null,  // Null for new animations, non-null for editing existing animation
       modalOpen: false,         // Generic modal open state
       hasUnsavedChanges: false, // Track unsaved changes
@@ -56,14 +56,20 @@ class App extends Component {
         fetchCatalogFromServer(),
       ]);
 
-      const frames = await this.loadFramesForAnimations(metadataList);
+      const loadingStatus = {};
+      for (const metadata of metadataList) {
+        loadingStatus[metadata.animationID] = { status: 'loading' };
+      }
 
       this.setState({
         metadataArray: metadataList,
-        frames,
+        frames: new Map(),
         isLoading: false,
+        loadingStatus,
         activeAnimationID: null,
         catalogAnimations: catalogList,
+      }, () => {
+        this.prefetchAnimationFrames(metadataList);
       });
     } catch (error) {
       console.error('Failed to initialize app data:', error);
@@ -75,24 +81,41 @@ class App extends Component {
     window.removeEventListener('beforeunload', this.handleBeforeUnload);
   }
 
-  loadFramesForAnimations = async (animations) => {
-    const frames = new Map();
-    const fetchPromises = animations.map(async (animationMetadata) => {
-      if (!animationMetadata.frameOrder || animationMetadata.frameOrder.length === 0) {
-        return;
-      }
-      const batch = await fetchFramesRawFromServer(
-        animationMetadata.animationID,
-        animationMetadata.frameOrder
-      );
-      for (const [frameId, frameData] of batch.entries()) {
-        frames.set(frameId, frameData);
-      }
-    });
+  prefetchAnimationFrames = (metadataList) => {
+    for (const metadata of metadataList) {
+      this.loadFramesForAnimation(metadata);
+    }
+  };
 
-    await Promise.all(fetchPromises);
-    return frames;
-  }
+  loadFramesForAnimation = async (metadata) => {
+    try {
+      const batch = await fetchFramesRawFromServer(metadata.animationID, metadata.frameOrder);
+      this.setState(prevState => {
+        const frames = new Map(prevState.frames);
+        for (const [frameId, frameData] of batch.entries()) {
+          frames.set(frameId, frameData);
+        }
+        return {
+          frames,
+          loadingStatus: {
+            ...prevState.loadingStatus,
+            [metadata.animationID]: { status: 'ready' }
+          }
+        };
+      });
+    } catch (error) {
+      console.error(`Failed to load frames for animation ${metadata.animationID}:`, error);
+      this.setState(prevState => ({
+        loadingStatus: {
+          ...prevState.loadingStatus,
+          [metadata.animationID]: {
+            status: 'error',
+            message: error && error.message ? error.message : 'Failed to load frames'
+          }
+        }
+      }));
+    }
+  };
 
   setUnsavedChanges = (hasUnsavedChanges) => {
     this.setState({ hasUnsavedChanges });
@@ -201,15 +224,10 @@ class App extends Component {
   };
 
   archiveCatalogAnimation = async (animationID) => {
-    const isQueued = this.state.metadataArray.some((metadata) => metadata.animationID === animationID);
-    const confirmation = window.confirm(
-      isQueued
-        ? 'This animation is currently in the active queue. Archiving will remove it from the catalog but it will remain queued. Continue?'
-        : 'Archive this animation? It will be removed from the catalog but retained for safekeeping.'
-    );
+    const queuedAnimation = this.state.metadataArray.find((metadata) => metadata.animationID === animationID);
 
-    if (!confirmation) {
-      return;
+    if (queuedAnimation) {
+      this.removeAnimation(animationID);
     }
 
     try {
@@ -217,27 +235,6 @@ class App extends Component {
       this.removeCatalogAnimationLocally(animationID);
     } catch (error) {
       console.error('Failed to archive catalog animation:', error);
-      window.alert('Failed to archive animation. Please try again.');
-    }
-  };
-
-  deleteCatalogAnimation = async (animationID) => {
-    const isQueued = this.state.metadataArray.some((metadata) => metadata.animationID === animationID);
-    const confirmation = window.confirm(
-      isQueued
-        ? 'This animation is currently in the active queue. Deleting removes it from the catalog forever but keeps the queued copy. Continue?'
-        : 'Permanently delete this animation from the catalog? This action cannot be undone.'
-    );
-
-    if (!confirmation) {
-      return;
-    }
-
-    try {
-      await deleteCatalogAnimationFromServer(animationID);
-      this.removeCatalogAnimationLocally(animationID);
-    } catch (error) {
-      console.error('Failed to delete catalog animation:', error);
       window.alert('Failed to delete animation. Please try again.');
     }
   };
@@ -260,7 +257,15 @@ class App extends Component {
       }
 
       // replace the state with the new metadata and frames
-      return { metadataArray: newMetadata, frames: newFrames, hasUnsavedChanges: true };
+      return {
+        metadataArray: newMetadata,
+        frames: newFrames,
+        loadingStatus: {
+          ...prevState.loadingStatus,
+          [newAnimationMetadata.animationID]: { status: 'ready' }
+        },
+        hasUnsavedChanges: true
+      };
     });
   }
 
@@ -283,7 +288,13 @@ class App extends Component {
           }
         }
       }
-      return { metadataArray: newMetadata, frames: newFrames, hasUnsavedChanges: true };
+      const { [animationID]: _removedStatus, ...restStatus } = prevState.loadingStatus;
+      return {
+        metadataArray: newMetadata,
+        frames: newFrames,
+        loadingStatus: restStatus,
+        hasUnsavedChanges: true
+      };
     });
   }
 
@@ -367,6 +378,7 @@ class App extends Component {
             metadataArray={metadataArray}
             frames={frames}
             isLoading={isLoading}
+            loadingStatus={this.state.loadingStatus}
             removeAnimation={this.removeAnimation}
             rearrangeAnimations={this.rearrangeAnimations}
             rearrangeFrames={this.rearrangeFrames}
@@ -391,7 +403,6 @@ class App extends Component {
             onClose={this.closeCatalog}
             onAddToQueue={this.addCatalogAnimation}
             onArchiveAnimation={this.archiveCatalogAnimation}
-            onDeleteAnimation={this.deleteCatalogAnimation}
             isLoading={isCatalogLoading}
           />
         )}

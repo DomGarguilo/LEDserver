@@ -6,11 +6,11 @@ class Header extends Component {
     render() {
         return (
             <div className="Header">
-                <button onClick={this.props.openCatalog} className="button" title="Browse animation catalog">
-                    Catalog&nbsp;<FontAwesomeIcon icon={faList} />
-                </button>
                 <button onClick={this.props.openModalForNewAnimation} className="button" title="Add new animation">
                     New Animation&nbsp;<FontAwesomeIcon icon={faPlusSquare} />
+                </button>
+                <button onClick={this.props.openCatalog} className="button" title="Browse animation catalog">
+                    Catalog&nbsp;<FontAwesomeIcon icon={faList} />
                 </button>
                 <button onClick={this.props.sendStateToServer} className="button" title="Save changes">
                     Save&nbsp;<FontAwesomeIcon icon={faSave} />

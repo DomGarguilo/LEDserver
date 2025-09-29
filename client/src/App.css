@@ -204,17 +204,18 @@ body {
   gap: 8px;
 }
 
-.CatalogTitle {
-  font-weight: bold;
-  word-break: break-word;
-}
-
-.CatalogMeta {
+.CatalogMetaRow {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 0.9rem;
   color: #555555;
+}
+
+.CatalogMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .CatalogActions {
@@ -234,14 +235,11 @@ body {
   color: #7a7a7a;
 }
 
-.CatalogArchiveButton {
-  flex: 1 1 120px;
-}
-
 .CatalogDeleteButton {
   flex: 1 1 120px;
   background-color: #c0392b;
   border-color: #c0392b;
+  color: #ffffff;
 }
 
 .CatalogDeleteButton:hover:not(:disabled) {
@@ -252,4 +250,12 @@ body {
 .CatalogDeleteButton:focus-visible {
   outline: 3px solid rgba(192, 57, 43, 0.35);
   outline-offset: 2px;
+}
+
+.CatalogDeleteButton:disabled,
+.CatalogDeleteButton.CatalogDeleteButton--disabled {
+  background-color: #e0e0e0;
+  border-color: #d0d0d0;
+  color: #7a7a7a;
+  cursor: not-allowed;
 }
