@@ -12,7 +12,7 @@ import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
 import { fetchFrame, insertFrame } from './db/animationOperations';
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
-import { fetchAnimationCatalog, upsertCatalogEntries, archiveCatalogEntry } from './db/catalogOperations';
+import { fetchAnimationCatalog, fetchCatalogEntryById, upsertCatalogEntries, archiveCatalogEntry } from './db/catalogOperations';
 import { Frame } from "./Frame";
 import { Metadata } from "./Metadata";
 
@@ -220,8 +220,10 @@ app.get('/frameData/:frameId', async (req: Request, res: Response) => {
 app.get('/framesRaw/:animationID', async (req: Request, res: Response) => {
   try {
     const animationID = req.params.animationID;
-    // find metadata order for this animation
-    const meta = metadataCache.find(m => m.animationID === animationID);
+    let meta = metadataCache.find(m => m.animationID === animationID);
+    if (!meta) {
+      meta = await fetchCatalogEntryById(animationID);
+    }
     if (!meta) {
       return res.status(404).send('Animation metadata not found');
     }

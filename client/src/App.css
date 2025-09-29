@@ -165,7 +165,7 @@ body {
 
 .CatalogGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   flex: 1 1 auto;
   overflow-y: auto;
@@ -206,7 +206,8 @@ body {
 
 .CatalogMetaRow {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: space-between;
   gap: 12px;
   font-size: 0.9rem;
   color: #555555;
@@ -216,6 +217,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .CatalogActions {
@@ -225,14 +227,39 @@ body {
   justify-content: flex-end;
 }
 
-.CatalogAddButton {
+.CatalogToggleButton {
   flex: 2 1 160px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
 }
 
-.CatalogAddButton:disabled {
-  cursor: not-allowed;
+.CatalogToggleButton--add {
+  background-color: #ffffff;
+  color: #2c7be5;
+  border-color: #2c7be5;
+}
+
+.CatalogToggleButton--add:hover {
+  background-color: #2c7be5;
+  color: #ffffff;
+}
+
+.CatalogToggleButton--remove {
+  background-color: #f5f5f5;
+  color: #555555;
+}
+
+.CatalogToggleButton--remove:hover {
   background-color: #e0e0e0;
-  color: #7a7a7a;
+}
+
+.CatalogToggleButton:disabled {
+  cursor: not-allowed;
+  background-color: #eaeaea;
+  color: #9a9a9a;
+  border-color: #d0d0d0;
 }
 
 .CatalogDeleteButton {
