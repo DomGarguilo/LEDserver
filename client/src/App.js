@@ -135,16 +135,31 @@ class App extends Component {
 
   openCatalog = async () => {
     this.setState({ isCatalogOpen: true });
-    await this.ensureCatalogFramesLoaded();
+    await this.refreshCatalogAnimations();
   };
 
   closeCatalog = () => {
     this.setState({ isCatalogOpen: false });
   };
 
-  ensureCatalogFramesLoaded = async () => {
-    const { catalogAnimations, catalogFrames } = this.state;
-    const framesToFetch = catalogAnimations.filter((animation) => {
+  refreshCatalogAnimations = async () => {
+    this.setState({ isCatalogLoading: true });
+    try {
+      const catalogList = await fetchCatalogFromServer();
+      const activeIds = new Set(this.state.metadataArray.map((meta) => meta.animationID));
+      const filteredCatalog = catalogList.filter((animation) => !activeIds.has(animation.animationID));
+      this.setState({ catalogAnimations: filteredCatalog });
+      await this.ensureCatalogFramesLoaded(filteredCatalog);
+    } catch (error) {
+      console.error('Failed to refresh catalog:', error);
+    } finally {
+      this.setState({ isCatalogLoading: false });
+    }
+  };
+
+  ensureCatalogFramesLoaded = async (animations = this.state.catalogAnimations) => {
+    const { catalogFrames } = this.state;
+    const framesToFetch = animations.filter((animation) => {
       if (!animation.frameOrder || animation.frameOrder.length === 0) {
         return false;
       }
@@ -155,7 +170,6 @@ class App extends Component {
       return;
     }
 
-    this.setState({ isCatalogLoading: true });
     try {
       const updatedFrames = new Map(catalogFrames);
       for (const animation of framesToFetch) {
@@ -173,8 +187,6 @@ class App extends Component {
       this.setState({ catalogFrames: updatedFrames });
     } catch (error) {
       console.error('Failed to load catalog frames:', error);
-    } finally {
-      this.setState({ isCatalogLoading: false });
     }
   };
 
@@ -204,6 +216,10 @@ class App extends Component {
     };
 
     this.addAnimation(metadataCopy, frameData);
+
+    this.setState((prevState) => ({
+      catalogAnimations: prevState.catalogAnimations.filter((animation) => animation.animationID !== animationMetadata.animationID),
+    }));
   };
 
   removeCatalogAnimationLocally = (animationID) => {
@@ -403,6 +419,7 @@ class App extends Component {
             onClose={this.closeCatalog}
             onAddToQueue={this.addCatalogAnimation}
             onArchiveAnimation={this.archiveCatalogAnimation}
+            onRemoveFromQueue={this.removeAnimation}
             isLoading={isCatalogLoading}
           />
         )}

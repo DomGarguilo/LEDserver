@@ -12,6 +12,16 @@ const fetchAnimationCatalog = async (): Promise<Metadata[]> => {
   }
 };
 
+const fetchCatalogEntryById = async (animationID: string): Promise<Metadata | undefined> => {
+  try {
+    const doc = await AnimationCatalogModel.findOne({ animationID }, '-_id animationID frameDuration repeatCount frameOrder').lean();
+    return doc ? new Metadata(doc.animationID, doc.frameDuration, doc.repeatCount, doc.frameOrder) : undefined;
+  } catch (error) {
+    console.error('Error fetching animation catalog entry:', error);
+    throw error;
+  }
+};
+
 const upsertCatalogEntries = async (metadataEntries: Metadata[]) => {
   try {
     const operations = metadataEntries.map((metadata) => (
@@ -59,4 +69,4 @@ const archiveCatalogEntry = async (animationID: string): Promise<boolean> => {
   }
 };
 
-export { fetchAnimationCatalog, upsertCatalogEntries, archiveCatalogEntry };
+export { fetchAnimationCatalog, fetchCatalogEntryById, upsertCatalogEntries, archiveCatalogEntry };

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import Animation from './Animation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTimes, faTrashAlt, faImages, faClock, faRedo } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faMinus, faTimes, faTrashAlt, faImages, faClock, faRedo } from '@fortawesome/free-solid-svg-icons';
 
 const CatalogModal = ({
   animations,
@@ -10,6 +10,7 @@ const CatalogModal = ({
   onClose,
   onAddToQueue,
   onArchiveAnimation,
+  onRemoveFromQueue,
   isLoading,
 }) => {
   const animationIdSet = queueAnimationIDs instanceof Set ? queueAnimationIDs : new Set(queueAnimationIDs);
@@ -91,7 +92,7 @@ const CatalogModal = ({
                       </span>
                       <span className="CatalogMetaItem">
                         <FontAwesomeIcon icon={faClock} />
-                        {animation.frameDuration} ms/frame
+                        {animation.frameDuration} ms
                       </span>
                       <span className="CatalogMetaItem">
                         <FontAwesomeIcon icon={faRedo} />
@@ -100,12 +101,17 @@ const CatalogModal = ({
                     </div>
                     <div className="CatalogActions">
                       <button
-                        className="button CatalogAddButton"
-                        onClick={() => onAddToQueue(animation)}
-                        disabled={isQueued || !hasFrames}
-                        title={isQueued ? 'Animation already in the queue' : 'Add animation to the queue'}
+                        className={`button CatalogToggleButton ${isQueued ? 'CatalogToggleButton--remove' : 'CatalogToggleButton--add'}`}
+                        onClick={() => (isQueued ? onRemoveFromQueue(animation.animationID) : onAddToQueue(animation))}
+                        disabled={!isQueued && !hasFrames}
+                        title={isQueued ? 'Remove from queue' : 'Add animation to the queue'}
                       >
-                        {isQueued ? 'In Queue' : (
+                        {isQueued ? (
+                          <>
+                            Remove from Queue&nbsp;
+                            <FontAwesomeIcon icon={faMinus} />
+                          </>
+                        ) : (
                           <>
                             Add to Queue&nbsp;
                             <FontAwesomeIcon icon={faPlus} />
@@ -118,7 +124,7 @@ const CatalogModal = ({
                         title={isQueued ? 'Remove from queue before deleting' : 'Delete this animation'}
                         disabled={isQueued}
                       >
-                        Delete&nbsp;
+                        Delete From Catalog&nbsp;
                         <FontAwesomeIcon icon={faTrashAlt} />
                       </button>
                     </div>
