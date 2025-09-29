@@ -50,15 +50,15 @@ const modalStyles = {
   },
   topRightButtons: {
     position: 'absolute',
-    top: '20px',
-    right: '20px',
+    top: 20,
+    right: 20,
     display: 'flex',
-    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
   },
-  button: {
-    marginLeft: '10px',
+  topButton: {
     fontSize: '1rem',
-    padding: '10px 15px',
+    padding: '10px 12px',
   },
   topSection: {
     display: 'flex',
@@ -106,6 +106,20 @@ class Modal extends Component {
   }
 
   backdropRef = React.createRef();
+
+  componentDidMount() {
+    document.addEventListener('keydown', this.handleKeyDown);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.handleKeyDown);
+  }
+
+  handleKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      this.confirmClose();
+    }
+  };
 
   handleMouseDown = (event) => {
     if (event.target === this.backdropRef.current) {
@@ -364,13 +378,33 @@ class Modal extends Component {
       <div style={modalStyles.backdrop} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} ref={this.backdropRef}>
         <div style={{ ...modalStyles.content, pointerEvents: isProcessing ? 'none' : 'auto' }} onClick={e => e.stopPropagation()}>
           <div style={modalStyles.topRightButtons}>
-            <button onClick={this.handleSave} className="button" title={this.props.isNewAnimation ? "Insert" : "Save"}>
-              {this.props.isNewAnimation ? "Insert" : "Save"}&nbsp;<FontAwesomeIcon icon={faSave} />
-              {this.state.hasUnsavedChanges && <span style={{ color: 'red', marginLeft: '5px' }}>!</span>}
+            <button
+              onClick={this.confirmClose}
+              className="button"
+              style={modalStyles.topButton}
+              title="Close"
+              aria-label="Close"
+            >
+              <FontAwesomeIcon icon={faTimes} />
             </button>
-            <button onClick={this.confirmClose} className="button" title="Close">
-              Close&nbsp;<FontAwesomeIcon icon={faTimes} />
+            <button
+              onClick={this.handleSave}
+              className="button"
+              style={modalStyles.topButton}
+              title={this.props.isNewAnimation ? "Insert" : "Save"}
+              aria-label={this.props.isNewAnimation ? "Insert" : "Save"}
+            >
+              <FontAwesomeIcon icon={faSave} />
             </button>
+            {this.state.hasUnsavedChanges && (
+              <span
+                style={{ color: 'red', fontWeight: 'bold', marginLeft: 4 }}
+                title="Unsaved changes"
+                aria-label="Unsaved changes"
+              >
+                •
+              </span>
+            )}
           </div>
           {this.props.isNewAnimation && (
             <input

@@ -12,6 +12,7 @@ import connectToMongo from './db/connectToMongo';
 import { testAnimationData, testMetadata } from './test/testData';
 import { fetchFrame, insertFrame } from './db/animationOperations';
 import { fetchMetadataArray, replaceMetadataArray } from './db/metadataOperations';
+import { fetchAnimationCatalog, upsertCatalogEntries, archiveCatalogEntry } from './db/catalogOperations';
 import { Frame } from "./Frame";
 import { Metadata } from "./Metadata";
 
@@ -45,6 +46,7 @@ const connectToDbAndInitCache = async () => {
 
       // Insert metadata into the database
       await replaceMetadataArray(testMetadata);
+      await upsertCatalogEntries(testMetadata);
 
       // Fetch the metadata from the database again to get the inserted IDs
       updateMetadataCacheAndHash(await fetchMetadataArray());
@@ -64,6 +66,7 @@ const connectToDbAndInitCache = async () => {
       }
     } else {
       updateMetadataCacheAndHash(metadata);
+      await upsertCatalogEntries(metadata);
     }
 
     // initialize animation cache based on metadata
@@ -150,6 +153,34 @@ app.get('/metadata', (req: Request, res: Response) => {
     hash: metadataHash
   };
   res.json(data);
+});
+
+app.get('/catalog', async (req: Request, res: Response) => {
+  console.log('Handling GET request for "/catalog"');
+  try {
+    const catalog = await fetchAnimationCatalog();
+    res.json({ animations: catalog });
+  } catch (error) {
+    console.error('Error fetching animation catalog:', error);
+    res.status(500).send('Error fetching animation catalog');
+  }
+});
+
+app.post('/catalog/:animationID/archive', async (req: Request, res: Response) => {
+  const { animationID } = req.params;
+  console.log(`Handling POST request for "/catalog/${animationID}/archive"`);
+
+  try {
+    const archived = await archiveCatalogEntry(animationID);
+    if (!archived) {
+      return res.status(404).send('Animation not found in catalog');
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error('Error archiving animation catalog entry:', error);
+    return res.status(500).send('Error archiving animation catalog entry');
+  }
 });
 
 app.get('/metadata/hash/:hash', (req: Request, res: Response) => {
@@ -297,6 +328,8 @@ app.post('/data', upload.any(), async (req, res) => {
       console.error('Invalid animation JSON format.');
       return res.status(500).send('Invalid animation JSON format.');
     }
+
+    await upsertCatalogEntries(metadataArray);
 
     // Reconstruct the frames Map from received files
     const framesMap: Map<string, Uint8Array> = new Map();

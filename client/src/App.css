@@ -34,6 +34,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
   padding: 20px;
   background-color: var(--header-background-color);
   color: var(--header-text-color);
@@ -110,4 +112,150 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+}
+
+.CatalogBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.CatalogContent {
+  background: #ffffff;
+  max-width: 90vw;
+  width: 900px;
+  max-height: 80vh;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.CatalogHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.CatalogHeaderRow h2 {
+  margin: 0;
+  color: #333333;
+}
+
+.CatalogCloseButton {
+  min-width: 40px;
+}
+
+.CatalogStatus {
+  text-align: center;
+  color: #444444;
+  padding: 40px 0;
+  font-size: 1rem;
+}
+
+.CatalogGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.CatalogCard {
+  background: var(--container-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.CatalogPreview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000000;
+  border-radius: 8px;
+  min-height: 180px;
+  overflow: hidden;
+}
+
+.CatalogPlaceholder {
+  color: #dddddd;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.CatalogDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.CatalogMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #555555;
+}
+
+.CatalogMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.CatalogActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.CatalogAddButton {
+  flex: 2 1 160px;
+}
+
+.CatalogAddButton:disabled {
+  cursor: not-allowed;
+  background-color: #e0e0e0;
+  color: #7a7a7a;
+}
+
+.CatalogDeleteButton {
+  flex: 1 1 120px;
+  background-color: #c0392b;
+  border-color: #c0392b;
+  color: #ffffff;
+}
+
+.CatalogDeleteButton:hover:not(:disabled) {
+  background-color: #962d22;
+  border-color: #962d22;
+}
+
+.CatalogDeleteButton:focus-visible {
+  outline: 3px solid rgba(192, 57, 43, 0.35);
+  outline-offset: 2px;
+}
+
+.CatalogDeleteButton:disabled,
+.CatalogDeleteButton.CatalogDeleteButton--disabled {
+  background-color: #e0e0e0;
+  border-color: #d0d0d0;
+  color: #7a7a7a;
+  cursor: not-allowed;
 }

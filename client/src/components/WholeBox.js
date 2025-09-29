@@ -18,7 +18,9 @@ const WholeBox = (props) => {
                             className="animation-container"
                             style={{ position: 'relative', minWidth: 180, minHeight: 180 }}
                         >
-                            {status === 'ready' && <Animation metadata={metadata} frames={frames} />}
+                            {status === 'ready' && (
+                                <Animation metadata={metadata} frames={frames} samplingTechnique="queue" />
+                            )}
                             {status === 'loading' && (
                                 <div style={overlayStyle}>
                                     <FontAwesomeIcon icon={faSpinner} spin size="2x" />

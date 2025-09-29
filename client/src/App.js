@@ -1,7 +1,14 @@
 import { Component } from "react";
 import AnimationContainer from './components/AnimationContainer';
-import { fetchMetadataFromServer, fetchFramesRawFromServer, sendStateToServer } from './utils';
+import {
+  fetchMetadataFromServer,
+  fetchFramesRawFromServer,
+  sendStateToServer,
+  fetchCatalogFromServer,
+  archiveCatalogAnimationOnServer,
+} from './utils';
 import Modal from './components/Modal';
+import CatalogModal from './components/CatalogModal';
 
 import './App.css';
 import Header from "components/Header";
@@ -18,12 +25,16 @@ class App extends Component {
 
     this.state = {
       metadataArray: [], // Array of animation metadata, each with a list of frame IDs
-      frames: new Map(), // Map from frame IDs to frame data
+      frames: new Map(), // Map from frame IDs to frame data for the active queue
       isLoading: true,
       loadingStatus: {},
       activeAnimationID: null,  // Null for new animations, non-null for editing existing animation
       modalOpen: false,         // Generic modal open state
-      hasUnsavedChanges: false  // Track unsaved changes
+      hasUnsavedChanges: false, // Track unsaved changes
+      catalogAnimations: [],
+      catalogFrames: new Map(),
+      isCatalogLoading: false,
+      isCatalogOpen: false,
     };
   }
 
@@ -39,21 +50,31 @@ class App extends Component {
   async componentDidMount() {
     window.addEventListener('beforeunload', this.handleBeforeUnload);
 
-    const metadataList = await fetchMetadataFromServer();
-    const loadingStatus = {};
-    for (const metadata of metadataList) {
-      loadingStatus[metadata.animationID] = { status: 'loading' };
-    }
+    try {
+      const [metadataList, catalogList] = await Promise.all([
+        fetchMetadataFromServer(),
+        fetchCatalogFromServer(),
+      ]);
 
-    this.setState({
-      metadataArray: metadataList,
-      frames: new Map(),
-      isLoading: false,
-      loadingStatus,
-      activeAnimationID: null
-    }, () => {
-      this.prefetchAnimationFrames(metadataList);
-    });
+      const loadingStatus = {};
+      for (const metadata of metadataList) {
+        loadingStatus[metadata.animationID] = { status: 'loading' };
+      }
+
+      this.setState({
+        metadataArray: metadataList,
+        frames: new Map(),
+        isLoading: false,
+        loadingStatus,
+        activeAnimationID: null,
+        catalogAnimations: catalogList,
+      }, () => {
+        this.prefetchAnimationFrames(metadataList);
+      });
+    } catch (error) {
+      console.error('Failed to initialize app data:', error);
+      this.setState({ isLoading: false });
+    }
   }
 
   componentWillUnmount() {
@@ -112,9 +133,115 @@ class App extends Component {
     this.setState({ modalOpen: false, activeAnimationID: null });
   };
 
+  openCatalog = async () => {
+    this.setState({ isCatalogOpen: true });
+    await this.ensureCatalogFramesLoaded();
+  };
+
+  closeCatalog = () => {
+    this.setState({ isCatalogOpen: false });
+  };
+
+  ensureCatalogFramesLoaded = async () => {
+    const { catalogAnimations, catalogFrames } = this.state;
+    const framesToFetch = catalogAnimations.filter((animation) => {
+      if (!animation.frameOrder || animation.frameOrder.length === 0) {
+        return false;
+      }
+      return animation.frameOrder.some((frameId) => !catalogFrames.has(frameId));
+    });
+
+    if (framesToFetch.length === 0) {
+      return;
+    }
+
+    this.setState({ isCatalogLoading: true });
+    try {
+      const updatedFrames = new Map(catalogFrames);
+      for (const animation of framesToFetch) {
+        if (!animation.frameOrder || animation.frameOrder.length === 0) {
+          continue;
+        }
+        const batch = await fetchFramesRawFromServer(
+          animation.animationID,
+          animation.frameOrder
+        );
+        for (const [frameId, frameData] of batch.entries()) {
+          updatedFrames.set(frameId, frameData);
+        }
+      }
+      this.setState({ catalogFrames: updatedFrames });
+    } catch (error) {
+      console.error('Failed to load catalog frames:', error);
+    } finally {
+      this.setState({ isCatalogLoading: false });
+    }
+  };
+
+  addCatalogAnimation = (animationMetadata) => {
+    if (this.state.metadataArray.some(metadata => metadata.animationID === animationMetadata.animationID)) {
+      return;
+    }
+
+    const frameData = new Map();
+    for (const frameId of animationMetadata.frameOrder) {
+      const frame = this.state.catalogFrames.get(frameId);
+      if (frame) {
+        frameData.set(frameId, frame);
+      }
+    }
+
+    if (frameData.size !== animationMetadata.frameOrder.length) {
+      console.warn('Unable to add catalog animation due to missing frames:', animationMetadata.animationID);
+      return;
+    }
+
+    const metadataCopy = {
+      animationID: animationMetadata.animationID,
+      frameDuration: animationMetadata.frameDuration,
+      repeatCount: animationMetadata.repeatCount,
+      frameOrder: [...animationMetadata.frameOrder],
+    };
+
+    this.addAnimation(metadataCopy, frameData);
+  };
+
+  removeCatalogAnimationLocally = (animationID) => {
+    this.setState((prevState) => {
+      const animationToRemove = prevState.catalogAnimations.find((animation) => animation.animationID === animationID);
+      if (!animationToRemove) {
+        return null;
+      }
+
+      const updatedAnimations = prevState.catalogAnimations.filter((animation) => animation.animationID !== animationID);
+      const updatedFrames = new Map(prevState.catalogFrames);
+      (animationToRemove.frameOrder || []).forEach((frameId) => {
+        updatedFrames.delete(frameId);
+      });
+
+      return { catalogAnimations: updatedAnimations, catalogFrames: updatedFrames };
+    });
+  };
+
+  archiveCatalogAnimation = async (animationID) => {
+    const queuedAnimation = this.state.metadataArray.find((metadata) => metadata.animationID === animationID);
+
+    if (queuedAnimation) {
+      this.removeAnimation(animationID);
+    }
+
+    try {
+      await archiveCatalogAnimationOnServer(animationID);
+      this.removeCatalogAnimationLocally(animationID);
+    } catch (error) {
+      console.error('Failed to archive catalog animation:', error);
+      window.alert('Failed to delete animation. Please try again.');
+    }
+  };
+
   /**
    * Adds a new animation to the state.
-   * 
+   *
    * @param {Object} newAnimationMetadata - The metadata of the new animation.
    * @param {Map<string,Uint8Array} newFrameData - The frame data of the new animation.
    */
@@ -224,8 +351,19 @@ class App extends Component {
   }
 
   render() {
-    const { metadataArray, frames, isLoading, activeAnimationID, modalOpen } = this.state;
+    const {
+      metadataArray,
+      frames,
+      isLoading,
+      activeAnimationID,
+      modalOpen,
+      catalogAnimations,
+      catalogFrames,
+      isCatalogOpen,
+      isCatalogLoading,
+    } = this.state;
     const activeMetadata = activeAnimationID ? metadataArray.find(metadata => metadata.animationID === activeAnimationID) : {};
+    const queuedAnimationIDs = new Set(metadataArray.map(metadata => metadata.animationID));
 
     return (
       <div className="container">
@@ -233,6 +371,7 @@ class App extends Component {
           sendStateToServer={this.sendStateToServer}
           openModalForNewAnimation={this.openModalForNewAnimation}
           hasUnsavedChanges={this.state.hasUnsavedChanges}
+          openCatalog={this.openCatalog}
         />
         <div className="AnimationContainer">
           <AnimationContainer
@@ -254,6 +393,17 @@ class App extends Component {
             updateMetadata={this.updateMetadata}
             addAnimation={this.addAnimation}
             isNewAnimation={!activeAnimationID}
+          />
+        )}
+        {isCatalogOpen && (
+          <CatalogModal
+            animations={catalogAnimations}
+            frames={catalogFrames}
+            queueAnimationIDs={queuedAnimationIDs}
+            onClose={this.closeCatalog}
+            onAddToQueue={this.addCatalogAnimation}
+            onArchiveAnimation={this.archiveCatalogAnimation}
+            isLoading={isCatalogLoading}
           />
         )}
       </div>

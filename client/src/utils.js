@@ -151,6 +151,27 @@ export const fetchMetadataFromServer = async () => {
     return data.metadata;
 }
 
+export const fetchCatalogFromServer = async () => {
+    const endpoint = SERVER_ROOT_URL + 'catalog';
+    console.debug('GET request for catalog from server. Endpoint: ' + endpoint);
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.debug('Catalog received: ' + JSON.stringify(data));
+    return data.animations || [];
+}
+
+export const archiveCatalogAnimationOnServer = async (animationID) => {
+    const endpoint = SERVER_ROOT_URL + `catalog/${encodeURIComponent(animationID)}/archive`;
+    console.debug('POST request to archive catalog animation. Endpoint: ' + endpoint);
+    const response = await fetch(endpoint, { method: 'POST' });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+}
+
 /**
  * @param {*} frameID the unique ID of the frame to fetch
  * @returns the frame data as a Uint8Array from the server
