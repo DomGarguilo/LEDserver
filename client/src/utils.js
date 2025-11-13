@@ -1,5 +1,16 @@
-const SERVER_ROOT_URL = window.location.href;
-//const SERVER_ROOT_URL = 'http://localhost:5000/';
+const normalizeBaseUrl = (url) => (url.endsWith('/') ? url : `${url}/`);
+
+const SERVER_ROOT_URL = (() => {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SERVER_URL) {
+        return normalizeBaseUrl(import.meta.env.VITE_SERVER_URL);
+    }
+
+    if (typeof window !== 'undefined' && window.location?.origin) {
+        return normalizeBaseUrl(window.location.origin);
+    }
+
+    return '/';
+})();
 
 export const IMAGE_PIXEL_LENGTH = 16;
 export const FRAME_PIXEL_COUNT = Math.pow(IMAGE_PIXEL_LENGTH, 2);
@@ -117,6 +128,7 @@ export const reverseEveryOtherCol = (matrix) => {
  */
 export const sendStateToServer = async (metadataArray, frameDataMap) => {
     const formData = new FormData();
+    const endpoint = SERVER_ROOT_URL + 'data';
 
     // Add metadata to the form data
     formData.append('metadata', JSON.stringify(metadataArray));
@@ -129,7 +141,7 @@ export const sendStateToServer = async (metadataArray, frameDataMap) => {
     }
 
     try {
-        const response = await fetch('/data', { method: 'POST', body: formData });
+        const response = await fetch(endpoint, { method: 'POST', body: formData });
         if (!response.ok) {
             throw new Error(`Server responded with status ${response.status}`);
         }

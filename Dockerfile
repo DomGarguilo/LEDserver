@@ -1,28 +1,51 @@
-FROM node:22-alpine
+##
+# Builder stage: install dependencies and produce compiled artifacts.
+##
+FROM node:24 AS builder
 
-# install dependencies from root
 WORKDIR /app
+
+# Root dependencies (keep dev deps for build tooling)
+COPY package*.json ./
+RUN npm ci
+
+# Server dependencies (needs dev deps for TypeScript)
+WORKDIR /app/server
+COPY server/package*.json ./
+RUN npm ci
+
+# Client dependencies (needs dev deps for Vite)
+WORKDIR /app/client
+COPY client/package*.json ./
+RUN npm ci
+
+# Copy the full source tree and build once.
+WORKDIR /app
+COPY . .
+RUN npm run build
+
+##
+# Production stage: only runtime deps plus built assets.
+##
+FROM node:24-alpine AS production
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Root production dependencies.
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# install dependencies from server
+# Server production dependencies.
 WORKDIR /app/server
-COPY /server/package*.json ./
-RUN npm ci
-
-# install dependencies from client
-WORKDIR /app/client
-COPY /client/package*.json ./
+COPY server/package*.json ./
 RUN npm ci --omit=dev
 
-# copy the remaining source files
+# Copy build outputs and any runtime assets.
 WORKDIR /app
-COPY . .
+COPY --from=builder /app/server/build ./server/build
+COPY --from=builder /app/server/firmware ./server/firmware
+COPY --from=builder /app/client/dist ./client/dist
 
-# build the server and client
-RUN npm run build
-
-# remove the client source files, keep only the build
-RUN rm -rf client/src
-
+EXPOSE 5000
 CMD ["npm", "start"]
