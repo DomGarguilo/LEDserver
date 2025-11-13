@@ -1,5 +1,5 @@
 import { Component } from "react";
-import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { Reorder, getWholeBoxStyle } from "../utils";
 import WholeBox from "./WholeBox";
 

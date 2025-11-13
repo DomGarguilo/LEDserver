@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { DragDropContext } from "react-beautiful-dnd";
+import { DragDropContext } from "@hello-pangea/dnd";
 import { Reorder, genFrameID, getResizedRGBArray, getResizedRGBArrayFromImageData, extractFramesFromGif } from "../utils";
 import Animation from "./Animation";
 import FrameList from "./FrameList";

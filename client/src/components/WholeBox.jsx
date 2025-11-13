@@ -1,4 +1,4 @@
-import { Draggable } from "react-beautiful-dnd";
+import { Draggable } from "@hello-pangea/dnd";
 import Animation from "./Animation";
 import { getItemStyle } from 'utils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

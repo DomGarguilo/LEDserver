@@ -374,7 +374,7 @@ app.post('/data', upload.any(), async (req, res) => {
 });
 
 // Catch-all handler for any request that doesn't match the above
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 

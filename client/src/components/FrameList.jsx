@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react'
-import { Droppable, Draggable } from "react-beautiful-dnd";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { getItemStyle, getFrameListStyle } from "../utils";
 import Frame from "./Frame";
 
