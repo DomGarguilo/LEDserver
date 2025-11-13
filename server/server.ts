@@ -111,7 +111,7 @@ app.use(cors());
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const clientBuildPath: string = path.join(__dirname, '../../client/build');
+const clientBuildPath: string = path.join(__dirname, '../../client/dist');
 const faviconPath: string = path.join(clientBuildPath, 'favicon.ico');
 
 // Serve static files from the React app build directory
