@@ -44,7 +44,6 @@ RUN npm ci --omit=dev
 # Copy build outputs and any runtime assets.
 WORKDIR /app
 COPY --from=builder /app/server/build ./server/build
-COPY --from=builder /app/server/firmware ./server/firmware
 COPY --from=builder /app/client/dist ./client/dist
 
 EXPOSE 5000
