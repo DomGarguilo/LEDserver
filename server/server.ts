@@ -166,7 +166,7 @@ app.get('/catalog', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/catalog/:animationID/archive', async (req: Request, res: Response) => {
+app.post('/catalog/:animationID/archive', async (req: Request<{ animationID: string }>, res: Response) => {
   const { animationID } = req.params;
   console.log(`Handling POST request for "/catalog/${animationID}/archive"`);
 
@@ -193,7 +193,7 @@ app.get('/metadata/hash/:hash', (req: Request, res: Response) => {
 });
 
 // Endpoint to fetch a specific frame of an animation
-app.get('/frameData/:frameId', async (req: Request, res: Response) => {
+app.get('/frameData/:frameId', async (req: Request<{ frameId: string }>, res: Response) => {
   const frameId = req.params.frameId;
   if (!frameId) {
     return res.status(400).send('Frame ID is required.');
@@ -217,7 +217,7 @@ app.get('/frameData/:frameId', async (req: Request, res: Response) => {
 });
 
 // Raw binary batch endpoint: returns concatenated RGB buffers for an animation in correct frame order
-app.get('/framesRaw/:animationID', async (req: Request, res: Response) => {
+app.get('/framesRaw/:animationID', async (req: Request<{ animationID: string }>, res: Response) => {
   try {
     const animationID = req.params.animationID;
     let meta = metadataCache.find(m => m.animationID === animationID);
